@@ -90,3 +90,25 @@ src/
 npm run build
 npm start
 ```
+
+## Roadmap
+
+### Short-term
+- **Live index ticker** — Re-add SENSEX and BANKNIFTY to the ticker header
+- **WebSocket proxy** — Proxy NSE WebSocket through Next.js server for reliable Origin headers and reconnect
+- **Stock screeners** — Filter stocks by volume, price range, and OI change thresholds
+- **Chart timeframes** — Add 1D / 1W / 1M toggle for performance charts
+
+### Medium-term
+- **F&O chain viewer** — Interactive option chain with strike-wise OI, IV, and Greeks
+- **Multi-sector comparison** — Side-by-side view of 2-3 selected sectors with overlaid performance
+- **Alerts system** — Desktop notifications for OI spurts, sector breakouts, and index levels
+- **Export** — CSV/PDF export for OI spurt tables and sector data
+- **Portfolio tracker** — Add holdings/watchlist with P&L against sector performance
+
+### Long-term
+- **Historical data** — Cached daily snapshots with trend lines, moving averages, RSI
+- **Backtesting** — Test option strategies against historical OI and price data
+- **API** — Public REST API for the aggregated NSE/BSE data points
+- **PWA** — Offline-capable progressive web app with push notifications
+- **Multi-language** — Hindi and other Indian language support

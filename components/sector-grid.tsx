@@ -29,47 +29,47 @@ export function SectorGrid({
   const { sortedData, sort, toggleSort } = useSort(sectors);
 
   function SortIcon({ columnKey }: { columnKey: string }) {
-    if (sort.key !== columnKey) return <span className="ml-1 text-muted-foreground/40">↕</span>;
-    return <span className="ml-1">{sort.direction === "asc" ? "↑" : "↓"}</span>;
+    if (sort.key !== columnKey) return <span className="ml-1 text-muted-foreground/30">↕</span>;
+    return <span className="ml-1 text-foreground">{sort.direction === "asc" ? "↑" : "↓"}</span>;
   }
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-xl border border-border overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead
-              className="cursor-pointer select-none"
+              className="cursor-pointer select-none text-[13px] font-semibold uppercase tracking-wider text-muted-foreground"
               onClick={() => toggleSort("indexLongName")}
             >
               Sector <SortIcon columnKey="indexLongName" />
             </TableHead>
             <TableHead
-              className="cursor-pointer select-none text-right"
+              className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground"
               onClick={() => toggleSort("current")}
             >
               Price <SortIcon columnKey="current" />
             </TableHead>
             <TableHead
-              className="cursor-pointer select-none text-right"
+              className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground"
               onClick={() => toggleSort("pChange")}
             >
-              % Change <SortIcon columnKey="pChange" />
+              Chg% <SortIcon columnKey="pChange" />
             </TableHead>
             <TableHead
-              className="cursor-pointer select-none text-right"
+              className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground"
               onClick={() => toggleSort("open")}
             >
               Open <SortIcon columnKey="open" />
             </TableHead>
             <TableHead
-              className="cursor-pointer select-none text-right"
+              className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground hidden md:table-cell"
               onClick={() => toggleSort("high")}
             >
               High <SortIcon columnKey="high" />
             </TableHead>
             <TableHead
-              className="cursor-pointer select-none text-right"
+              className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground hidden md:table-cell"
               onClick={() => toggleSort("low")}
             >
               Low <SortIcon columnKey="low" />
@@ -85,35 +85,40 @@ export function SectorGrid({
             return (
               <TableRow
                 key={sector.index}
-                className={`cursor-pointer ${isSelected ? "bg-muted/50" : "hover:bg-muted/30"}`}
+                className={`cursor-pointer border-t border-border ${
+                  isSelected
+                    ? "bg-primary/5"
+                    : "hover:bg-muted/50"
+                }`}
                 onClick={() => onSectorClick(sector.index)}
               >
-                <TableCell className="font-medium">
+                <TableCell className="font-medium text-sm">
                   <div className="flex items-center gap-2">
                     <span>{sector.indexLongName}</span>
-                    {isSelected && (
-                      <Badge variant="outline" className="text-xs">selected</Badge>
-                    )}
+                    <span className={getChangeColor(variation)}>
+                      {variation >= 0 ? "↑" : "↓"}
+                    </span>
                   </div>
                 </TableCell>
-                <TableCell className="text-right font-mono">
+                <TableCell className="text-right font-mono text-sm tabular-nums">
                   {formatPrice(sector.current)}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Badge
-                    variant={isPositive ? "default" : "destructive"}
-                    className="text-xs"
+                  <span
+                    className={`font-mono text-sm tabular-nums ${
+                      isPositive ? "text-semantic-up" : "text-semantic-down"
+                    }`}
                   >
                     {formatPercent(sector.pChange)}
-                  </Badge>
+                  </span>
                 </TableCell>
-                <TableCell className="text-right font-mono text-muted-foreground">
+                <TableCell className="text-right font-mono text-sm tabular-nums text-muted-foreground">
                   {formatPrice(sector.open)}
                 </TableCell>
-                <TableCell className="text-right font-mono text-muted-foreground">
+                <TableCell className="text-right font-mono text-sm tabular-nums text-muted-foreground hidden md:table-cell">
                   {formatPrice(sector.high)}
                 </TableCell>
-                <TableCell className="text-right font-mono text-muted-foreground">
+                <TableCell className="text-right font-mono text-sm tabular-nums text-muted-foreground hidden md:table-cell">
                   {formatPrice(sector.low)}
                 </TableCell>
               </TableRow>

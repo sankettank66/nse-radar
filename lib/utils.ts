@@ -28,13 +28,7 @@ export function formatVolume(value: number): string {
 }
 
 export function getChangeColor(value: number): string {
-  if (value > 0) return "text-emerald-600";
-  if (value < 0) return "text-red-600";
+  if (value > 0) return "text-semantic-up";
+  if (value < 0) return "text-semantic-down";
   return "text-muted-foreground";
-}
-
-export function getChangeBg(value: number): string {
-  if (value > 0) return "bg-emerald-50 dark:bg-emerald-950/30";
-  if (value < 0) return "bg-red-50 dark:bg-red-950/30";
-  return "bg-muted";
 }

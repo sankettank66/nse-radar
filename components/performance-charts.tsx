@@ -26,9 +26,9 @@ export function PerformanceCharts({
       .sort((a, b) => b.pChange - a.pChange)
       .slice(0, 15);
     return sorted.map((s) => ({
-      name: s.indexLongName.length > 15 ? s.indexLongName.slice(0, 15) + "..." : s.indexLongName,
+      name: s.indexLongName.length > 18 ? s.indexLongName.slice(0, 18) + "..." : s.indexLongName,
       change: Number(s.pChange.toFixed(2)),
-      fill: s.pChange >= 0 ? "var(--color-chart-1)" : "var(--color-chart-3)",
+      up: s.pChange >= 0,
     }));
   }, [sectors]);
 
@@ -39,41 +39,43 @@ export function PerformanceCharts({
       return {
         name: s.symbol.length > 8 ? s.symbol.slice(0, 8) : s.symbol,
         change: Number(pChange.toFixed(2)),
-        fill: pChange >= 0 ? "var(--color-chart-1)" : "var(--color-chart-3)",
+        up: pChange >= 0,
       };
     });
   }, [stocks]);
 
-  const stockChartConfig = {
+  const chartConfig = {
     change: {
       label: "% Change",
-      color: "var(--color-chart-1)",
-    },
-  };
-
-  const sectorChartConfig = {
-    change: {
-      label: "% Change",
-      color: "var(--color-chart-1)",
+      color: "var(--color-primary)",
     },
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Sector Performance (Top 15)</CardTitle>
+      <Card className="rounded-xl border border-border shadow-none">
+        <CardHeader className="px-6 pt-6 pb-2">
+          <CardTitle className="text-[18px] font-semibold tracking-tight">
+            Sector Performance
+            <span className="text-muted-foreground font-normal text-sm ml-2">Top 15</span>
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <ChartContainer config={sectorChartConfig} className="aspect-auto h-[300px]">
-            <BarChart data={sectorChartData} layout="vertical" margin={{ left: 100, right: 20 }}>
-              <XAxis type="number" tickLine={false} axisLine={false} />
+        <CardContent className="px-2 pb-4">
+          <ChartContainer config={chartConfig} className="aspect-auto h-[320px]">
+            <BarChart data={sectorChartData} layout="vertical" margin={{ left: 110, right: 16, top: 8, bottom: 8 }}>
+              <XAxis
+                type="number"
+                tickLine={false}
+                axisLine={false}
+                tick={{ fontSize: 12, fontFamily: "var(--font-mono)" }}
+              />
               <YAxis
                 type="category"
                 dataKey="name"
                 tickLine={false}
                 axisLine={false}
-                width={100}
+                width={110}
+                tick={{ fontSize: 12 }}
               />
               <ChartTooltip
                 content={<ChartTooltipContent />}
@@ -81,7 +83,10 @@ export function PerformanceCharts({
               />
               <Bar dataKey="change" radius={[0, 4, 4, 0]}>
                 {sectorChartData.map((entry, index) => (
-                  <Cell key={index} fill={entry.fill} />
+                  <Cell
+                    key={index}
+                    fill={entry.up ? "var(--color-semantic-up)" : "var(--color-semantic-down)"}
+                  />
                 ))}
               </Bar>
             </BarChart>
@@ -90,24 +95,33 @@ export function PerformanceCharts({
       </Card>
 
       {selectedSector && stockChartData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Stock Performance</CardTitle>
+        <Card className="rounded-xl border border-border shadow-none">
+          <CardHeader className="px-6 pt-6 pb-2">
+            <CardTitle className="text-[18px] font-semibold tracking-tight">
+              Stock Performance
+              <span className="text-muted-foreground font-normal text-sm ml-2">{stockChartData.length}</span>
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <ChartContainer config={stockChartConfig} className="aspect-auto h-[300px]">
+          <CardContent className="px-2 pb-4">
+            <ChartContainer config={chartConfig} className="aspect-auto h-[320px]">
               <BarChart
                 data={stockChartData}
                 layout="vertical"
-                margin={{ left: 80, right: 20 }}
+                margin={{ left: 80, right: 16, top: 8, bottom: 8 }}
               >
-                <XAxis type="number" tickLine={false} axisLine={false} />
+                <XAxis
+                  type="number"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 12, fontFamily: "var(--font-mono)" }}
+                />
                 <YAxis
                   type="category"
                   dataKey="name"
                   tickLine={false}
                   axisLine={false}
                   width={80}
+                  tick={{ fontSize: 12 }}
                 />
                 <ChartTooltip
                   content={<ChartTooltipContent />}
@@ -115,7 +129,10 @@ export function PerformanceCharts({
                 />
                 <Bar dataKey="change" radius={[0, 4, 4, 0]}>
                   {stockChartData.map((entry, index) => (
-                    <Cell key={index} fill={entry.fill} />
+                    <Cell
+                      key={index}
+                      fill={entry.up ? "var(--color-semantic-up)" : "var(--color-semantic-down)"}
+                    />
                   ))}
                 </Bar>
               </BarChart>

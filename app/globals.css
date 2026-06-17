@@ -39,6 +39,8 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-semantic-up: var(--semantic-up);
+  --color-semantic-down: var(--semantic-down);
   --radius-sm: calc(var(--radius) * 0.5);
   --radius-md: calc(var(--radius) * 0.75);
   --radius-lg: var(--radius);

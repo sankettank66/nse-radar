@@ -1,18 +1,29 @@
 "use client";
 
+import { useMemo } from "react";
 import { useNseData } from "@/hooks/use-nse-data";
 import { SectorGrid } from "@/components/sector-grid";
+import { SectorDrilldown } from "@/components/sector-drilldown";
 
 export default function Home() {
   const {
     sectors,
+    stocks,
+    oiSpurts,
     loading,
+    stocksLoading,
     error,
     selectedSector,
     setSelectedSector,
     lastUpdated,
     refresh,
   } = useNseData();
+
+  const selectedSectorName = useMemo(() => {
+    if (!selectedSector) return null;
+    const sector = sectors.find((s) => s.indexSymbol === selectedSector);
+    return sector?.indexName ?? selectedSector;
+  }, [selectedSector, sectors]);
 
   return (
     <div className="flex flex-col flex-1">
@@ -56,6 +67,13 @@ export default function Home() {
           />
         )}
       </main>
+
+      <SectorDrilldown
+        sectorName={selectedSectorName}
+        stocks={stocks}
+        loading={stocksLoading}
+        onClose={() => setSelectedSector(null)}
+      />
     </div>
   );
 }

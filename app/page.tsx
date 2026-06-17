@@ -1,14 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNseData } from "@/hooks/use-nse-data";
 import { SectorGrid } from "@/components/sector-grid";
 import { SectorDrilldown } from "@/components/sector-drilldown";
 import { PerformanceCharts } from "@/components/performance-charts";
 import { OISpurts } from "@/components/oi-spurts";
 import { Analytics } from "@/components/analytics";
+import { FnoAnalysis } from "@/components/fno-analysis";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Separator } from "@/components/ui/separator";
 
 export default function Home() {
   const {
@@ -25,6 +25,8 @@ export default function Home() {
     refresh,
   } = useNseData();
 
+  const [fnoSide, setFnoSide] = useState<"CE" | "PE" | null>(null);
+
   const selectedSectorName = useMemo(() => {
     if (!selectedSector) return null;
     const sector = sectors.find((s) => s.index === selectedSector);
@@ -38,12 +40,26 @@ export default function Home() {
           <h1 className="text-[18px] font-semibold tracking-tight">
             NSE Sectorial Dashboard
           </h1>
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 sm:gap-3 text-sm text-muted-foreground">
             {lastUpdated && (
               <span className="hidden sm:inline text-muted-foreground text-[13px]">
                 Updated {lastUpdated.toLocaleTimeString("en-IN")}
               </span>
             )}
+            <div className="hidden sm:flex items-center gap-2">
+              <button
+                onClick={() => setFnoSide("CE")}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[100px] bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity cursor-pointer"
+              >
+                CE
+              </button>
+              <button
+                onClick={() => setFnoSide("PE")}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[100px] border border-border bg-background text-foreground text-sm font-semibold hover:bg-accent transition-colors cursor-pointer"
+              >
+                PE
+              </button>
+            </div>
             {refreshing && (
               <div className="size-4 animate-spin rounded-full border-2 border-border border-t-primary" />
             )}
@@ -60,6 +76,21 @@ export default function Home() {
       </header>
 
       <main className="flex-1 px-6 py-8 max-w-7xl mx-auto w-full">
+        <div className="flex sm:hidden items-center gap-2 mb-6">
+          <button
+            onClick={() => setFnoSide("CE")}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-[100px] bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity cursor-pointer"
+          >
+            F&O CE
+          </button>
+          <button
+            onClick={() => setFnoSide("PE")}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-[100px] border border-border bg-background text-foreground text-sm font-semibold hover:bg-accent transition-colors cursor-pointer"
+          >
+            F&O PE
+          </button>
+        </div>
+
         {error && (
           <div className="mb-6 p-4 rounded-xl bg-muted text-destructive text-sm">
             {error}
@@ -106,6 +137,13 @@ export default function Home() {
         stocks={stocks}
         loading={stocksLoading}
         onClose={() => setSelectedSector(null)}
+      />
+
+      <FnoAnalysis
+        side={fnoSide}
+        onClose={() => setFnoSide(null)}
+        stocks={selectedSector ? stocks : []}
+        oiSpurts={oiSpurts}
       />
     </div>
   );

@@ -27,6 +27,12 @@ export default function OiContractsPage() {
       </header>
 
       <main className="flex-1 px-6 py-8 max-w-7xl mx-auto w-full">
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold tracking-tight">OI Contracts</h2>
+          <p className="text-[14px] text-muted-foreground mt-1">
+            Open Interest and price action relationships for stock F&O contracts. Data refreshes every 60 seconds.
+          </p>
+        </div>
         <OiContracts />
       </main>
     </div>

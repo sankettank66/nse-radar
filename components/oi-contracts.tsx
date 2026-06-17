@@ -4,18 +4,13 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import type { OiContract } from "@/lib/types";
 import { fetchOiContracts } from "@/lib/api";
 import { formatPercent, formatPrice, formatVolume } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -27,10 +22,10 @@ import {
 import { useSort } from "@/hooks/use-sort";
 
 const CATEGORIES = [
-  { key: "Rise-in-OI-Rise", label: "Rise OI + Rise Price", desc: "Bullish buildup" },
-  { key: "Rise-in-OI-Slide", label: "Rise OI + Slide Price", desc: "Bearish buildup" },
-  { key: "Slide-in-OI-Rise", label: "Slide OI + Rise Price", desc: "Short covering" },
-  { key: "Slide-in-OI-Slide", label: "Slide OI + Slide Price", desc: "Long unwinding" },
+  { key: "Rise-in-OI-Rise", label: "Rise OI + Rise Price", desc: "Bullish buildup – price rises with rising open interest", short: "Bullish" },
+  { key: "Rise-in-OI-Slide", label: "Rise OI + Slide Price", desc: "Bearish buildup – price falls with rising open interest", short: "Bearish" },
+  { key: "Slide-in-OI-Rise", label: "Slide OI + Rise Price", desc: "Short covering – price rises as open interest declines", short: "Short Cover" },
+  { key: "Slide-in-OI-Slide", label: "Slide OI + Slide Price", desc: "Long unwinding – price falls as open interest declines", short: "Long Unwind" },
 ];
 
 const STOCK_TYPES = new Set(["FUTSTK", "OPTSTK"]);
@@ -56,6 +51,7 @@ export function OiContracts() {
   const [data, setData] = useState<Record<string, OiContract[]> | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("");
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadData = useCallback(async (isInitial = false) => {
@@ -80,6 +76,17 @@ export function OiContracts() {
     };
   }, [loadData]);
 
+  useEffect(() => {
+    if (data) {
+      const cats = CATEGORIES.filter(
+        (cat) => data[cat.key] && data[cat.key].some(isStockContract)
+      );
+      if (cats.length > 0 && (!activeTab || !cats.some((c) => c.key === activeTab))) {
+        setActiveTab(cats[0].key);
+      }
+    }
+  }, [data, activeTab]);
+
   if (loading) return null;
 
   const activeCategories = CATEGORIES.filter(
@@ -88,42 +95,78 @@ export function OiContracts() {
 
   if (activeCategories.length === 0) return null;
 
+  const activeCat = activeCategories.find((c) => c.key === activeTab) ?? activeCategories[0];
+
+  const contractCounts = Object.fromEntries(
+    activeCategories.map((cat) => [cat.key, (data?.[cat.key] ?? []).filter(isStockContract).length])
+  );
+
   return (
     <Card className="rounded-xl border border-border shadow-none">
       <CardHeader className="px-6 pt-6 pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-[18px] font-semibold tracking-tight">
-            OI Contracts Analysis
-          </CardTitle>
+          <div>
+            <CardTitle className="text-[18px] font-semibold tracking-tight">
+              OI Contracts Analysis
+            </CardTitle>
+            <p className="text-[13px] text-muted-foreground mt-1">
+              Open Interest and price action breakdown across stock F&O contracts
+            </p>
+          </div>
           {refreshing && (
-            <div className="size-4 animate-spin rounded-full border-2 border-border border-t-primary" />
+            <div className="size-4 animate-spin rounded-full border-2 border-border border-t-primary shrink-0" />
           )}
         </div>
       </CardHeader>
+
       <CardContent className="p-0 pb-4">
-        <Tabs defaultValue={activeCategories[0].key}>
-          <div className="px-6 mb-3 overflow-x-auto">
-            <TabsList className="gap-0.5">
-              {activeCategories.map((cat) => (
-                <TabsTrigger
-                  key={cat.key}
-                  value={cat.key}
-                  className="text-[12px] whitespace-nowrap px-3"
-                >
-                  {cat.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+        {/* Desktop: pill tab buttons */}
+        <div className="hidden sm:block px-6 mb-4">
+          <div className="inline-flex items-center gap-1 rounded-lg bg-muted p-[3px]">
+            {activeCategories.map((cat) => (
+              <button
+                key={cat.key}
+                onClick={() => setActiveTab(cat.key)}
+                className={cn(
+                  "relative inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium whitespace-nowrap transition-all",
+                  activeTab === cat.key
+                    ? "bg-background text-foreground shadow-sm dark:bg-input/30"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {cat.label}
+                <span className="text-[11px] text-muted-foreground font-mono">
+                  {contractCounts[cat.key]}
+                </span>
+              </button>
+            ))}
           </div>
-          {activeCategories.map((cat) => {
-            const contracts = (data?.[cat.key] ?? []).filter(isStockContract);
-            return (
-              <TabsContent key={cat.key} value={cat.key}>
-                <ContractTable contracts={contracts} />
-              </TabsContent>
-            );
-          })}
-        </Tabs>
+        </div>
+
+        {/* Mobile: native dropdown */}
+        <div className="sm:hidden px-6 mb-4">
+          <select
+            value={activeTab}
+            onChange={(e) => setActiveTab(e.target.value)}
+            className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            {activeCategories.map((cat) => (
+              <option key={cat.key} value={cat.key}>
+                {cat.short} — {cat.label} ({contractCounts[cat.key]})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Category description */}
+        <div className="px-6 mb-4">
+          <p className="text-[13px] text-muted-foreground italic border-l-2 border-primary/30 pl-3">
+            {activeCat.desc}
+          </p>
+        </div>
+
+        {/* Table */}
+        <ContractTable contracts={(data?.[activeTab] ?? []).filter(isStockContract)} />
       </CardContent>
     </Card>
   );
@@ -131,6 +174,11 @@ export function OiContracts() {
 
 function ContractTable({ contracts }: { contracts: OiContract[] }) {
   const { sortedData, sort, toggleSort } = useSort(contracts, "changeInOI");
+
+  const totalOI = contracts.reduce((sum, c) => sum + c.latestOI, 0);
+  const avgChg = contracts.length
+    ? contracts.reduce((sum, c) => sum + c.pChange, 0) / contracts.length
+    : 0;
 
   function SortIcon({ columnKey }: { columnKey: string }) {
     if (sort.key !== columnKey) return <span className="ml-1 text-muted-foreground/30">↕</span>;
@@ -145,122 +193,147 @@ function ContractTable({ contracts }: { contracts: OiContract[] }) {
   };
 
   return (
-    <div className="overflow-x-auto px-6">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead
-              className="cursor-pointer select-none text-[13px] font-semibold uppercase tracking-wider text-muted-foreground"
-              onClick={() => toggleSort("symbol")}
-            >
-              Symbol <SortIcon columnKey="symbol" />
-            </TableHead>
-            <TableHead className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground hidden md:table-cell">
-              Exp
-            </TableHead>
-            <TableHead className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Type
-            </TableHead>
-            <TableHead
-              className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground"
-              onClick={() => toggleSort("ltp")}
-            >
-              LTP <SortIcon columnKey="ltp" />
-            </TableHead>
-            <TableHead
-              className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground"
-              onClick={() => toggleSort("pChange")}
-            >
-              Chg% <SortIcon columnKey="pChange" />
-            </TableHead>
-            <TableHead
-              className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground hidden sm:table-cell"
-              onClick={() => toggleSort("latestOI")}
-            >
-              OI <SortIcon columnKey="latestOI" />
-            </TableHead>
-            <TableHead
-              className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground"
-              onClick={() => toggleSort("changeInOI")}
-            >
-              OI Chg <SortIcon columnKey="changeInOI" />
-            </TableHead>
-            <TableHead
-              className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground hidden sm:table-cell"
-              onClick={() => toggleSort("pChangeInOI")}
-            >
-              OI Chg% <SortIcon columnKey="pChangeInOI" />
-            </TableHead>
-            <TableHead
-              className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground hidden lg:table-cell"
-              onClick={() => toggleSort("volume")}
-            >
-              Vol <SortIcon columnKey="volume" />
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sortedData.map((c) => {
-            const instLabel = c.instrumentType === "FUTSTK" ? "Fut" : "Opt";
-            const chgPctColor =
-              c.pChange >= 0 ? "text-semantic-up" : "text-semantic-down";
-            const oiChgColor =
-              c.changeInOI >= 0 ? "text-semantic-up" : "text-semantic-down";
-            return (
-              <TableRow
-                key={c.identifier}
-                className="border-t border-border hover:bg-muted/50"
+    <div>
+      {/* Stats bar */}
+      <div className="flex items-center gap-4 px-6 mb-3 text-[12px] text-muted-foreground">
+        <span>
+          Contracts: <strong className="text-foreground">{contracts.length}</strong>
+        </span>
+        <span className="hidden sm:inline">
+          Total OI: <strong className="text-foreground font-mono">{formatVolume(totalOI)}</strong>
+        </span>
+        <span className="hidden sm:inline">
+          Avg Chg: <strong className={`font-mono ${avgChg >= 0 ? "text-semantic-up" : "text-semantic-down"}`}>
+            {formatPercent(avgChg)}
+          </strong>
+        </span>
+      </div>
+
+      <div className="overflow-x-auto px-6">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead
+                className="cursor-pointer select-none text-[13px] font-semibold uppercase tracking-wider text-muted-foreground"
+                onClick={() => toggleSort("symbol")}
               >
-                <TableCell className="font-medium text-sm">{c.symbol}</TableCell>
-                <TableCell className="text-muted-foreground text-sm tabular-nums hidden md:table-cell">
-                  {formatExpiry(c.expiryDate)}
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {instLabel}
-                  {optionLabel(c) && (
-                    <span
-                      className={`ml-1 font-mono text-[11px] ${
-                        c.optionType === "Call"
-                          ? "text-semantic-up"
-                          : "text-semantic-down"
-                      }`}
-                    >
-                      {optionLabel(c)}
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell className="text-right font-mono text-sm tabular-nums">
-                  {formatPrice(c.ltp)}
-                </TableCell>
-                <TableCell className="text-right">
-                  <span
-                    className={`font-mono text-sm tabular-nums ${chgPctColor}`}
-                  >
-                    {formatPercent(c.pChange)}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right font-mono text-sm tabular-nums text-muted-foreground hidden sm:table-cell">
-                  {formatVolume(c.latestOI)}
-                </TableCell>
-                <TableCell className="text-right">
-                  <span className={`font-mono text-sm tabular-nums ${oiChgColor}`}>
-                    {c.changeInOI >= 0 ? "+" : ""}
-                    {formatVolume(Math.abs(c.changeInOI))}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right hidden sm:table-cell">
-                  <span className={`font-mono text-sm tabular-nums ${oiChgColor}`}>
-                    {formatPercent(c.pChangeInOI)}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right font-mono text-sm tabular-nums text-muted-foreground hidden lg:table-cell">
-                  {formatVolume(c.volume)}
+                Symbol <SortIcon columnKey="symbol" />
+              </TableHead>
+              <TableHead className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground hidden md:table-cell">
+                Exp
+              </TableHead>
+              <TableHead className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Type
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground"
+                onClick={() => toggleSort("ltp")}
+              >
+                LTP <SortIcon columnKey="ltp" />
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground"
+                onClick={() => toggleSort("pChange")}
+              >
+                Chg% <SortIcon columnKey="pChange" />
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground hidden sm:table-cell"
+                onClick={() => toggleSort("latestOI")}
+              >
+                OI <SortIcon columnKey="latestOI" />
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground"
+                onClick={() => toggleSort("changeInOI")}
+              >
+                OI Chg <SortIcon columnKey="changeInOI" />
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground hidden sm:table-cell"
+                onClick={() => toggleSort("pChangeInOI")}
+              >
+                OI Chg% <SortIcon columnKey="pChangeInOI" />
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground hidden lg:table-cell"
+                onClick={() => toggleSort("volume")}
+              >
+                Vol <SortIcon columnKey="volume" />
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedData.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground text-sm">
+                  No contracts found for this category
                 </TableCell>
               </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+            ) : (
+              sortedData.map((c) => {
+                const instLabel = c.instrumentType === "FUTSTK" ? "Fut" : "Opt";
+                const chgPctColor =
+                  c.pChange >= 0 ? "text-semantic-up" : "text-semantic-down";
+                const oiChgColor =
+                  c.changeInOI >= 0 ? "text-semantic-up" : "text-semantic-down";
+                return (
+                  <TableRow
+                    key={c.identifier}
+                    className="border-t border-border hover:bg-muted/50"
+                  >
+                    <TableCell className="font-medium text-sm">{c.symbol}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm tabular-nums hidden md:table-cell">
+                      {formatExpiry(c.expiryDate)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {instLabel}
+                      {optionLabel(c) && (
+                        <span
+                          className={`ml-1 font-mono text-[11px] ${
+                            c.optionType === "Call"
+                              ? "text-semantic-up"
+                              : "text-semantic-down"
+                          }`}
+                        >
+                          {optionLabel(c)}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm tabular-nums">
+                      {formatPrice(c.ltp)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span
+                        className={`font-mono text-sm tabular-nums ${chgPctColor}`}
+                      >
+                        {formatPercent(c.pChange)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm tabular-nums text-muted-foreground hidden sm:table-cell">
+                      {formatVolume(c.latestOI)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className={`font-mono text-sm tabular-nums ${oiChgColor}`}>
+                        {c.changeInOI >= 0 ? "+" : ""}
+                        {formatVolume(Math.abs(c.changeInOI))}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right hidden sm:table-cell">
+                      <span className={`font-mono text-sm tabular-nums ${oiChgColor}`}>
+                        {formatPercent(c.pChangeInOI)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm tabular-nums text-muted-foreground hidden lg:table-cell">
+                      {formatVolume(c.volume)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

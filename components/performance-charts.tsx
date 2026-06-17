@@ -32,6 +32,18 @@ export function PerformanceCharts({
     }));
   }, [sectors]);
 
+  const stockChartData = useMemo(() => {
+    if (!stocks || stocks.length === 0) return [];
+    return stocks.map((s) => {
+      const pChange = parseFloat(s.pChange);
+      return {
+        name: s.symbol.length > 8 ? s.symbol.slice(0, 8) : s.symbol,
+        change: Number(pChange.toFixed(2)),
+        fill: pChange >= 0 ? "var(--color-chart-1)" : "var(--color-chart-3)",
+      };
+    });
+  }, [stocks]);
+
   const stockChartConfig = {
     change: {
       label: "% Change",
@@ -77,7 +89,7 @@ export function PerformanceCharts({
         </CardContent>
       </Card>
 
-      {selectedSector && stocks.length > 0 && (
+      {selectedSector && stockChartData.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Stock Performance</CardTitle>
@@ -85,17 +97,7 @@ export function PerformanceCharts({
           <CardContent>
             <ChartContainer config={stockChartConfig} className="aspect-auto h-[300px]">
               <BarChart
-                data={stocks.map((s) => ({
-                  name:
-                    s.symbol.length > 8
-                      ? s.symbol.slice(0, 8)
-                      : s.symbol,
-                  change: Number(s.pChange.toFixed(2)),
-                  fill:
-                    s.pChange >= 0
-                      ? "var(--color-chart-1)"
-                      : "var(--color-chart-3)",
-                }))}
+                data={stockChartData}
                 layout="vertical"
                 margin={{ left: 80, right: 20 }}
               >
@@ -112,15 +114,8 @@ export function PerformanceCharts({
                   cursor={false}
                 />
                 <Bar dataKey="change" radius={[0, 4, 4, 0]}>
-                  {stocks.map((_, index) => (
-                    <Cell
-                      key={index}
-                      fill={
-                        stocks[index].pChange >= 0
-                          ? "var(--color-chart-1)"
-                          : "var(--color-chart-3)"
-                      }
-                    />
+                  {stockChartData.map((entry, index) => (
+                    <Cell key={index} fill={entry.fill} />
                   ))}
                 </Bar>
               </BarChart>

@@ -5,7 +5,6 @@ import {
   formatPercent,
   formatPrice,
   formatVolume,
-  getChangeColor,
 } from "@/lib/utils";
 import {
   Sheet,
@@ -66,34 +65,35 @@ export function SectorDrilldown({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {stocks.map((stock) => (
-                  <TableRow key={stock.symbol}>
-                    <TableCell className="font-medium">
-                      {stock.symbol}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatPrice(stock.lastPrice)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Badge
-                        variant={
-                          stock.pChange >= 0 ? "default" : "destructive"
-                        }
-                        className="text-xs"
-                      >
-                        {formatPercent(stock.pChange)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {formatVolume(stock.totalTradedVolume)}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {stocks?.map((stock) => {
+                  const pChange = parseFloat(stock.pChange);
+                  return (
+                    <TableRow key={stock.symbol}>
+                      <TableCell className="font-medium">
+                        {stock.symbol}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatPrice(stock.lastPrice)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Badge
+                          variant={pChange >= 0 ? "default" : "destructive"}
+                          className="text-xs"
+                        >
+                          {formatPercent(pChange)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">
+                        {formatVolume(parseFloat(stock.totalTradedVolume))}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
 
-          {!loading && stocks.length === 0 && (
+          {!loading && (!stocks || stocks.length === 0) && (
             <p className="text-center text-muted-foreground py-8">
               No stock data available for this sector.
             </p>

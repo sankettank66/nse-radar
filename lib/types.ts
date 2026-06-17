@@ -14,21 +14,17 @@ export interface SectorIndex {
 
 export interface SectorStock {
   symbol: string;
-  identifier: string;
-  companyName: string;
+  series: string;
   lastPrice: number;
-  change: number;
-  pChange: number;
-  totalTradedVolume: number;
-  totalTurnover: number;
-  open: number;
-  high: number;
-  low: number;
-  previousClose: number;
-}
-
-export interface SectorStocksData {
-  data: SectorStock[];
+  change: string;
+  pChange: string;
+  totalTradedVolume: string;
+  quantityTraded: string;
+  VWAP: string;
+  high: string;
+  low: string;
+  marketType: string;
+  lastUpdatedTime: string;
 }
 
 export interface OISpurtEntry {

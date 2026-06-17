@@ -99,7 +99,7 @@ export function useNseData(
 
     setStocksLoading(true);
     fetchSectorStocks(selectedSector)
-      .then((data) => setStocks(data.data))
+      .then((data) => setStocks(data))
       .catch(() => setStocks([]))
       .finally(() => setStocksLoading(false));
   }, [selectedSector]);

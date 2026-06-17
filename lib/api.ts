@@ -1,4 +1,4 @@
-import type { SectorIndex, SectorStocksData, OISpurtsData } from "@/lib/types";
+import type { SectorIndex, SectorStock, OISpurtsData } from "@/lib/types";
 
 const BASE_URL = "/api/nse";
 
@@ -16,8 +16,8 @@ export function fetchSectorialIndices(): Promise<SectorIndex[]> {
   );
 }
 
-export function fetchSectorStocks(sector: string): Promise<SectorStocksData> {
-  return fetchNse<SectorStocksData>(
+export function fetchSectorStocks(sector: string): Promise<SectorStock[]> {
+  return fetchNse<SectorStock[]>(
     `${BASE_URL}/heatmap-symbols?type=Sectoral%20Indices&indices=${encodeURIComponent(sector)}`
   );
 }

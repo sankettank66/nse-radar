@@ -4,6 +4,8 @@ import { useMemo } from "react";
 import { useNseData } from "@/hooks/use-nse-data";
 import { SectorGrid } from "@/components/sector-grid";
 import { SectorDrilldown } from "@/components/sector-drilldown";
+import { PerformanceCharts } from "@/components/performance-charts";
+import { Separator } from "@/components/ui/separator";
 
 export default function Home() {
   const {
@@ -58,13 +60,21 @@ export default function Home() {
             <div className="size-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
           </div>
         ) : (
-          <SectorGrid
-            sectors={sectors}
-            onSectorClick={(s) =>
-              setSelectedSector(selectedSector === s ? null : s)
-            }
-            selectedSector={selectedSector}
-          />
+          <>
+            <SectorGrid
+              sectors={sectors}
+              onSectorClick={(s) =>
+                setSelectedSector(selectedSector === s ? null : s)
+              }
+              selectedSector={selectedSector}
+            />
+            <Separator className="my-8" />
+            <PerformanceCharts
+              sectors={sectors}
+              stocks={stocks}
+              selectedSector={selectedSector}
+            />
+          </>
         )}
       </main>
 

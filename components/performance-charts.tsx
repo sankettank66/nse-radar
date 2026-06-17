@@ -67,7 +67,7 @@ export function PerformanceCharts({
                 type="number"
                 tickLine={false}
                 axisLine={false}
-                tick={{ fontSize: 12, fontFamily: "var(--font-mono)" }}
+                tick={{ fontSize: 12, fontFamily: "var(--font-mono)", fill: "currentColor" }}
               />
               <YAxis
                 type="category"
@@ -75,7 +75,7 @@ export function PerformanceCharts({
                 tickLine={false}
                 axisLine={false}
                 width={110}
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 12, fill: "currentColor" }}
               />
               <ChartTooltip
                 content={<ChartTooltipContent />}
@@ -113,7 +113,7 @@ export function PerformanceCharts({
                   type="number"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fontSize: 12, fontFamily: "var(--font-mono)" }}
+                  tick={{ fontSize: 12, fontFamily: "var(--font-mono)", fill: "currentColor" }}
                 />
                 <YAxis
                   type="category"
@@ -121,7 +121,7 @@ export function PerformanceCharts({
                   tickLine={false}
                   axisLine={false}
                   width={80}
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 12, fill: "currentColor" }}
                 />
                 <ChartTooltip
                   content={<ChartTooltipContent />}

@@ -14,6 +14,7 @@ export default function Home() {
     stocks,
     oiSpurts,
     loading,
+    refreshing,
     stocksLoading,
     error,
     selectedSector,
@@ -39,11 +40,15 @@ export default function Home() {
                 Last updated: {lastUpdated.toLocaleTimeString("en-IN")}
               </span>
             )}
+            {refreshing && (
+              <div className="size-4 animate-spin rounded-full border-2 border-muted border-t-primary" />
+            )}
             <button
               onClick={refresh}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border hover:bg-accent transition-colors cursor-pointer"
+              disabled={refreshing}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border hover:bg-accent transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Refresh
+              {refreshing ? "Refreshing..." : "Refresh"}
             </button>
           </div>
         </div>

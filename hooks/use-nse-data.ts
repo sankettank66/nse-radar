@@ -19,6 +19,7 @@ interface UseNseDataReturn {
   selectedSector: string | null;
   setSelectedSector: (sector: string | null) => void;
   loading: boolean;
+  refreshing: boolean;
   stocksLoading: boolean;
   error: string | null;
   lastUpdated: Date | null;
@@ -35,6 +36,7 @@ export function useNseData(
   const [oiSpurts, setOiSpurts] = useState<OISpurtEntry[]>([]);
   const [selectedSector, setSelectedSector] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [stocksLoading, setStocksLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -61,21 +63,26 @@ export function useNseData(
     }
   }, []);
 
-  const loadAll = useCallback(async () => {
-    setLoading(true);
+  const loadAll = useCallback(async (isInitial = false) => {
+    if (isInitial) {
+      setLoading(true);
+    } else {
+      setRefreshing(true);
+    }
     await Promise.all([loadSectors(), loadOiSpurts()]);
     setLastUpdated(new Date());
     setLoading(false);
+    setRefreshing(false);
   }, [loadSectors, loadOiSpurts]);
 
   const refresh = useCallback(() => {
-    loadAll();
+    loadAll(false);
   }, [loadAll]);
 
   useEffect(() => {
-    loadAll();
+    loadAll(true);
 
-    intervalRef.current = setInterval(loadAll, refreshInterval);
+    intervalRef.current = setInterval(() => loadAll(false), refreshInterval);
 
     return () => {
       if (intervalRef.current) {
@@ -104,6 +111,7 @@ export function useNseData(
     selectedSector,
     setSelectedSector,
     loading,
+    refreshing,
     stocksLoading,
     error,
     lastUpdated,

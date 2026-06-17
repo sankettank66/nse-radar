@@ -81,11 +81,11 @@ export function PerformanceCharts({
                 content={<ChartTooltipContent />}
                 cursor={false}
               />
-              <Bar dataKey="change" radius={[0, 4, 4, 0]}>
+              <Bar dataKey="change" radius={[0, 4, 4, 0]} fill="var(--color-primary)">
                 {sectorChartData.map((entry, index) => (
                   <Cell
                     key={index}
-                    fill={entry.up ? "var(--color-semantic-up)" : "var(--color-semantic-down)"}
+                    fill={entry.up ? "var(--color-primary)" : "var(--color-muted-foreground)"}
                   />
                 ))}
               </Bar>
@@ -127,11 +127,11 @@ export function PerformanceCharts({
                   content={<ChartTooltipContent />}
                   cursor={false}
                 />
-                <Bar dataKey="change" radius={[0, 4, 4, 0]}>
+                <Bar dataKey="change" radius={[0, 4, 4, 0]} fill="var(--color-primary)">
                   {stockChartData.map((entry, index) => (
                     <Cell
                       key={index}
-                      fill={entry.up ? "var(--color-semantic-up)" : "var(--color-semantic-down)"}
+                      fill={entry.up ? "var(--color-primary)" : "var(--color-muted-foreground)"}
                     />
                   ))}
                 </Bar>

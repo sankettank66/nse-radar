@@ -63,7 +63,8 @@ export function OiContracts() {
     else setRefreshing(true);
     try {
       const res = await fetchOiContracts();
-      setData(res.data);
+      const raw = Array.isArray(res.data) ? res.data[0] : res.data;
+      setData(raw);
     } catch {
       // non-critical
     }

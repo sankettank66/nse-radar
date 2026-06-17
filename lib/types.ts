@@ -76,7 +76,7 @@ export interface OiContract {
 }
 
 export interface OiContractsResponse {
-  data: Record<string, OiContract[]>;
+  data: Record<string, OiContract[]>[];
   timestamp: string;
   currTradingDate: string;
   prevTradingDate: string;

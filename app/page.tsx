@@ -81,6 +81,15 @@ export default function Home() {
         <div className="md:hidden border-t border-border px-6 py-2 max-w-7xl mx-auto w-full">
           <LiveTicker />
         </div>
+        <nav className="border-t border-border px-6 py-2 max-w-7xl mx-auto w-full overflow-x-auto">
+          <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+            <a href="#sectors" className="px-3 py-1 rounded-[100px] hover:bg-accent transition-colors no-underline">Sectors</a>
+            <a href="#analytics" className="px-3 py-1 rounded-[100px] hover:bg-accent transition-colors no-underline">Overview</a>
+            <a href="#charts" className="px-3 py-1 rounded-[100px] hover:bg-accent transition-colors no-underline">Charts</a>
+            <a href="#oi-spurts" className="px-3 py-1 rounded-[100px] hover:bg-accent transition-colors no-underline">OI Spurts</a>
+            <a href="#oi-contracts" className="px-3 py-1 rounded-[100px] hover:bg-accent transition-colors no-underline">OI Contracts</a>
+          </div>
+        </nav>
       </header>
 
       <main className="flex-1 px-6 py-8 max-w-7xl mx-auto w-full">
@@ -111,7 +120,7 @@ export default function Home() {
           </div>
         ) : (
           <div className="flex flex-col gap-12">
-            <section>
+            <section id="sectors">
               <SectorGrid
                 sectors={sectors}
                 onSectorClick={(s) =>
@@ -121,11 +130,11 @@ export default function Home() {
               />
             </section>
 
-            <section>
+            <section id="analytics">
               <Analytics sectors={sectors} oiSpurts={oiSpurts} />
             </section>
 
-            <section>
+            <section id="charts">
               <PerformanceCharts
                 sectors={sectors}
                 stocks={stocks}
@@ -133,11 +142,11 @@ export default function Home() {
               />
             </section>
 
-            <section>
+            <section id="oi-spurts">
               <OISpurts data={oiSpurts} />
             </section>
 
-            <section>
+            <section id="oi-contracts">
               <OiContracts />
             </section>
           </div>

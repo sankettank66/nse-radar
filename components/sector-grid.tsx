@@ -16,54 +16,54 @@ export function SectorGrid({
   onSectorClick,
   selectedSector,
 }: SectorGridProps) {
-  if (sectors.length === 0) return null;
+  if (!sectors || sectors.length === 0) return null;
 
   const sorted = [...sectors].sort(
-    (a, b) => b.percentChange - a.percentChange
+    (a, b) => b.pChange - a.pChange
   );
 
   const maxAbsChange = Math.max(
-    ...sorted.map((s) => Math.abs(s.percentChange)),
+    ...sorted.map((s) => Math.abs(s.pChange)),
     0.01
   );
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {sorted.map((sector) => {
-        const intensity = Math.abs(sector.percentChange) / maxAbsChange;
-        const isPositive = sector.percentChange >= 0;
-        const isSelected = selectedSector === sector.indexSymbol;
+        const variation = sector.current - sector.close;
+        const isPositive = sector.pChange >= 0;
+        const isSelected = selectedSector === sector.index;
 
         return (
           <Card
-            key={sector.indexSymbol}
+            key={sector.index}
             className={`cursor-pointer transition-all hover:shadow-md ${
               isSelected
                 ? "ring-2 ring-primary"
                 : ""
             }`}
-            onClick={() => onSectorClick(sector.indexSymbol)}
+            onClick={() => onSectorClick(sector.index)}
           >
             <CardContent className="p-4 flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-sm truncate">
-                  {sector.indexName}
+                  {sector.indexLongName}
                 </span>
                 <Badge
                   variant={isPositive ? "default" : "destructive"}
                   className="shrink-0"
                 >
-                  {formatPercent(sector.percentChange)}
+                  {formatPercent(sector.pChange)}
                 </Badge>
               </div>
               <div className="text-2xl font-semibold">
-                {formatPrice(sector.last)}
+                {formatPrice(sector.current)}
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <span
-                  className={getChangeColor(sector.variation)}
+                  className={getChangeColor(variation)}
                 >
-                  {isPositive ? "▲" : "▼"} {formatPrice(Math.abs(sector.variation))}
+                  {isPositive ? "▲" : "▼"} {formatPrice(Math.abs(variation))}
                 </span>
                 <span className="text-muted-foreground">O: {formatPrice(sector.open)}</span>
               </div>
@@ -76,7 +76,7 @@ export function SectorGrid({
                   }`}
                   style={{
                     width: `${Math.min(
-                      (Math.abs(sector.percentChange) / Math.max(...sorted.map((s) => Math.abs(s.percentChange)))) * 100,
+                      (Math.abs(sector.pChange) / maxAbsChange) * 100,
                       100
                     )}%`,
                   }}

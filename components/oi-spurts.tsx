@@ -1,7 +1,7 @@
 "use client";
 
 import type { OISpurtEntry } from "@/lib/types";
-import { formatPercent, formatPrice, formatVolume, getChangeColor } from "@/lib/utils";
+import { formatPercent, formatVolume } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -23,10 +23,10 @@ interface OISpurtsProps {
 }
 
 export function OISpurts({ data }: OISpurtsProps) {
-  if (data.length === 0) return null;
+  if (!data || data.length === 0) return null;
 
   const sorted = [...data].sort(
-    (a, b) => Math.abs(b.changeInOIPercent) - Math.abs(a.changeInOIPercent)
+    (a, b) => Math.abs(b.avgInOI) - Math.abs(a.avgInOI)
   );
 
   return (
@@ -41,8 +41,7 @@ export function OISpurts({ data }: OISpurtsProps) {
               <TableHead>Symbol</TableHead>
               <TableHead className="text-right">OI</TableHead>
               <TableHead className="text-right">OI Change</TableHead>
-              <TableHead className="text-right">Price</TableHead>
-              <TableHead className="text-right">% Change</TableHead>
+              <TableHead className="text-right">OI Change %</TableHead>
               <TableHead className="text-right">Volume</TableHead>
             </TableRow>
           </TableHeader>
@@ -53,28 +52,25 @@ export function OISpurts({ data }: OISpurtsProps) {
                   {entry.symbol}
                 </TableCell>
                 <TableCell className="text-right">
-                  {formatVolume(entry.openInterest)}
+                  {formatVolume(entry.latestOI)}
+                </TableCell>
+                <TableCell className="text-right">
+                  {formatVolume(entry.changeInOI)}
                 </TableCell>
                 <TableCell className="text-right">
                   <Badge
                     variant={
-                      entry.changeInOIPercent >= 0
+                      entry.avgInOI >= 0
                         ? "default"
                         : "destructive"
                     }
                     className="text-xs"
                   >
-                    {formatPercent(entry.changeInOIPercent)}
+                    {formatPercent(entry.avgInOI)}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">
-                  {formatPrice(entry.lastPrice)}
-                </TableCell>
-                <TableCell className={`text-right ${getChangeColor(entry.percentChange)}`}>
-                  {formatPercent(entry.percentChange)}
-                </TableCell>
                 <TableCell className="text-right text-muted-foreground">
-                  {formatVolume(entry.totalTradedVolume)}
+                  {formatVolume(entry.volume)}
                 </TableCell>
               </TableRow>
             ))}

@@ -45,7 +45,7 @@ export function useNseData(
   const loadSectors = useCallback(async () => {
     try {
       const data = await fetchSectorialIndices();
-      setSectors(data.data);
+      setSectors(data);
       setError(null);
     } catch (err) {
       setError(

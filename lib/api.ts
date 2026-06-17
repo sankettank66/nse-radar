@@ -1,4 +1,4 @@
-import type { HeatmapData, SectorStocksData, OISpurtsData } from "@/lib/types";
+import type { SectorIndex, SectorStocksData, OISpurtsData } from "@/lib/types";
 
 const BASE_URL = "/api/nse";
 
@@ -10,8 +10,8 @@ async function fetchNse<T>(url: string): Promise<T> {
   return response.json();
 }
 
-export function fetchSectorialIndices(): Promise<HeatmapData> {
-  return fetchNse<HeatmapData>(
+export function fetchSectorialIndices(): Promise<SectorIndex[]> {
+  return fetchNse<SectorIndex[]>(
     `${BASE_URL}/heatmap-index?type=Sectoral%20Indices`
   );
 }

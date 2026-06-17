@@ -1,20 +1,15 @@
 export interface SectorIndex {
-  indexName: string;
-  indexSymbol: string;
-  last: number;
-  variation: number;
-  percentChange: number;
+  index: string;
+  indexLongName: string;
+  current: number;
+  pChange: number;
   open: number;
   high: number;
   low: number;
-  previousClose: number;
-  yearHigh: number;
-  yearLow: number;
-  indicativeClose: number;
-}
-
-export interface HeatmapData {
-  data: SectorIndex[];
+  close: number;
+  yrHigh: number;
+  yrLow: number;
+  timeStamp?: string;
 }
 
 export interface SectorStock {
@@ -38,15 +33,11 @@ export interface SectorStocksData {
 
 export interface OISpurtEntry {
   symbol: string;
-  series: string;
-  openInterest: number;
+  latestOI: number;
+  prevOI: number;
   changeInOI: number;
-  changeInOIPercent: number;
-  lastPrice: number;
-  change: number;
-  percentChange: number;
-  totalTradedVolume: number;
-  underlying: string;
+  avgInOI: number;
+  volume: number;
   underlyingValue: number;
 }
 

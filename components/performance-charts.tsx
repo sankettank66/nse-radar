@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import type { SectorIndex, SectorStock } from "@/lib/types";
-import { formatPercent } from "@/lib/utils";
 import {
   ChartContainer,
   ChartTooltip,
@@ -24,12 +23,12 @@ export function PerformanceCharts({
 }: PerformanceChartsProps) {
   const sectorChartData = useMemo(() => {
     const sorted = [...sectors]
-      .sort((a, b) => b.percentChange - a.percentChange)
+      .sort((a, b) => b.pChange - a.pChange)
       .slice(0, 15);
     return sorted.map((s) => ({
-      name: s.indexName.length > 15 ? s.indexName.slice(0, 15) + "..." : s.indexName,
-      change: Number(s.percentChange.toFixed(2)),
-      fill: s.percentChange >= 0 ? "var(--color-chart-1)" : "var(--color-chart-3)",
+      name: s.indexLongName.length > 15 ? s.indexLongName.slice(0, 15) + "..." : s.indexLongName,
+      change: Number(s.pChange.toFixed(2)),
+      fill: s.pChange >= 0 ? "var(--color-chart-1)" : "var(--color-chart-3)",
     }));
   }, [sectors]);
 

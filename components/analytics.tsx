@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import type { SectorIndex, OISpurtEntry } from "@/lib/types";
-import { formatPercent, formatPrice, formatVolume, getChangeColor } from "@/lib/utils";
+import { formatPercent, getChangeColor } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -19,29 +19,29 @@ interface AnalyticsProps {
 export function Analytics({ sectors, oiSpurts }: AnalyticsProps) {
   const topGainers = useMemo(() => {
     return [...sectors]
-      .filter((s) => s.percentChange > 0)
-      .sort((a, b) => b.percentChange - a.percentChange)
+      .filter((s) => s.pChange > 0)
+      .sort((a, b) => b.pChange - a.pChange)
       .slice(0, 5);
   }, [sectors]);
 
   const topLosers = useMemo(() => {
     return [...sectors]
-      .filter((s) => s.percentChange < 0)
-      .sort((a, b) => a.percentChange - b.percentChange)
+      .filter((s) => s.pChange < 0)
+      .sort((a, b) => a.pChange - b.pChange)
       .slice(0, 5);
   }, [sectors]);
 
   const avgPerformance = useMemo(() => {
     if (sectors.length === 0) return 0;
-    return sectors.reduce((sum, s) => sum + s.percentChange, 0) / sectors.length;
+    return sectors.reduce((sum, s) => sum + s.pChange, 0) / sectors.length;
   }, [sectors]);
 
-  const advancing = useMemo(() => sectors.filter((s) => s.percentChange > 0).length, [sectors]);
-  const declining = useMemo(() => sectors.filter((s) => s.percentChange < 0).length, [sectors]);
+  const advancing = useMemo(() => sectors.filter((s) => s.pChange > 0).length, [sectors]);
+  const declining = useMemo(() => sectors.filter((s) => s.pChange < 0).length, [sectors]);
 
   const topOiInterest = useMemo(() => {
     return [...oiSpurts]
-      .sort((a, b) => Math.abs(b.changeInOIPercent) - Math.abs(a.changeInOIPercent))
+      .sort((a, b) => Math.abs(b.avgInOI) - Math.abs(a.avgInOI))
       .slice(0, 5);
   }, [oiSpurts]);
 
@@ -84,10 +84,10 @@ export function Analytics({ sectors, oiSpurts }: AnalyticsProps) {
           ) : (
             <div className="flex flex-col gap-1.5">
               {topGainers.map((s) => (
-                <div key={s.indexSymbol} className="flex justify-between text-xs">
-                  <span className="truncate max-w-[140px]">{s.indexName}</span>
+                <div key={s.index} className="flex justify-between text-xs">
+                  <span className="truncate max-w-[140px]">{s.indexLongName}</span>
                   <Badge variant="default" className="text-xs shrink-0">
-                    {formatPercent(s.percentChange)}
+                    {formatPercent(s.pChange)}
                   </Badge>
                 </div>
               ))}
@@ -108,10 +108,10 @@ export function Analytics({ sectors, oiSpurts }: AnalyticsProps) {
           ) : (
             <div className="flex flex-col gap-1.5">
               {topLosers.map((s) => (
-                <div key={s.indexSymbol} className="flex justify-between text-xs">
-                  <span className="truncate max-w-[140px]">{s.indexName}</span>
+                <div key={s.index} className="flex justify-between text-xs">
+                  <span className="truncate max-w-[140px]">{s.indexLongName}</span>
                   <Badge variant="destructive" className="text-xs shrink-0">
-                    {formatPercent(s.percentChange)}
+                    {formatPercent(s.pChange)}
                   </Badge>
                 </div>
               ))}
@@ -134,8 +134,8 @@ export function Analytics({ sectors, oiSpurts }: AnalyticsProps) {
               {topOiInterest.map((entry) => (
                 <div key={entry.symbol} className="flex justify-between text-xs">
                   <span className="font-medium">{entry.symbol}</span>
-                  <span className={getChangeColor(entry.changeInOIPercent)}>
-                    {formatPercent(entry.changeInOIPercent)}
+                  <span className={getChangeColor(entry.avgInOI)}>
+                    {formatPercent(entry.avgInOI)}
                   </span>
                 </div>
               ))}

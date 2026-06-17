@@ -26,8 +26,8 @@ export default function Home() {
 
   const selectedSectorName = useMemo(() => {
     if (!selectedSector) return null;
-    const sector = sectors.find((s) => s.indexSymbol === selectedSector);
-    return sector?.indexName ?? selectedSector;
+    const sector = sectors.find((s) => s.index === selectedSector);
+    return sector?.indexLongName ?? selectedSector;
   }, [selectedSector, sectors]);
 
   return (

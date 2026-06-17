@@ -40,3 +40,15 @@ export interface OISpurtEntry {
 export interface OISpurtsData {
   data: OISpurtEntry[];
 }
+
+export interface IndexQuote {
+  indexName: string;
+  currentPrice: number;
+  perChange: number;
+  change: number;
+  previousClose: number;
+  open: number;
+  high: number;
+  low: number;
+  mktStatus: string;
+}

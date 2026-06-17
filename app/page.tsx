@@ -9,6 +9,7 @@ import { OISpurts } from "@/components/oi-spurts";
 import { Analytics } from "@/components/analytics";
 import { FnoAnalysis } from "@/components/fno-analysis";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LiveTicker } from "@/components/live-ticker";
 
 export default function Home() {
   const {
@@ -37,9 +38,12 @@ export default function Home() {
     <div className="flex flex-col flex-1">
       <header className="sticky top-0 z-10 border-b border-border bg-background">
         <div className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto w-full">
-          <h1 className="text-[18px] font-semibold tracking-tight">
+          <h1 className="text-[18px] font-semibold tracking-tight shrink-0">
             NSE Sectorial Dashboard
           </h1>
+          <div className="hidden md:flex items-center flex-1 justify-center px-4 overflow-hidden">
+            <LiveTicker />
+          </div>
           <div className="flex items-center gap-2 sm:gap-3 text-sm text-muted-foreground">
             {lastUpdated && (
               <span className="hidden sm:inline text-muted-foreground text-[13px]">
@@ -72,6 +76,9 @@ export default function Home() {
             </button>
             <ThemeToggle />
           </div>
+        </div>
+        <div className="md:hidden border-t border-border px-6 py-2 max-w-7xl mx-auto w-full">
+          <LiveTicker />
         </div>
       </header>
 

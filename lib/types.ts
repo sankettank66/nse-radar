@@ -52,3 +52,32 @@ export interface IndexQuote {
   low: number;
   mktStatus: string;
 }
+
+export interface OiContract {
+  changeInOI: number;
+  expiryDate: string;
+  instrument: string;
+  latestOI: number;
+  ltp: number;
+  optionType: string;
+  pChange: number;
+  premTurnover: number;
+  prevClose: number;
+  prevOI: number;
+  strikePrice: number;
+  symbol: string;
+  turnover: number;
+  type: string;
+  underlyingValue: number;
+  volume: number;
+  identifier: string;
+  instrumentType: string;
+  pChangeInOI: number;
+}
+
+export interface OiContractsResponse {
+  data: Record<string, OiContract[]>;
+  timestamp: string;
+  currTradingDate: string;
+  prevTradingDate: string;
+}

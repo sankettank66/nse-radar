@@ -8,6 +8,7 @@ import { PerformanceCharts } from "@/components/performance-charts";
 import { OISpurts } from "@/components/oi-spurts";
 import { Analytics } from "@/components/analytics";
 import { FnoAnalysis } from "@/components/fno-analysis";
+import { OiContracts } from "@/components/oi-contracts";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LiveTicker } from "@/components/live-ticker";
 
@@ -134,6 +135,10 @@ export default function Home() {
 
             <section>
               <OISpurts data={oiSpurts} />
+            </section>
+
+            <section>
+              <OiContracts />
             </section>
           </div>
         )}

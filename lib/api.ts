@@ -1,4 +1,9 @@
-import type { SectorIndex, SectorStock, OISpurtsData } from "@/lib/types";
+import type {
+  SectorIndex,
+  SectorStock,
+  OISpurtsData,
+  OiContractsResponse,
+} from "@/lib/types";
 
 const BASE_URL = "/api/nse";
 
@@ -25,5 +30,11 @@ export function fetchSectorStocks(sector: string): Promise<SectorStock[]> {
 export function fetchOISpurts(): Promise<OISpurtsData> {
   return fetchNse<OISpurtsData>(
     `${BASE_URL}/live-analysis-oi-spurts-underlyings`
+  );
+}
+
+export function fetchOiContracts(): Promise<OiContractsResponse> {
+  return fetchNse<OiContractsResponse>(
+    `${BASE_URL}/live-analysis-oi-spurts-contracts`
   );
 }

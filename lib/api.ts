@@ -1,16 +1,9 @@
 import type { HeatmapData, SectorStocksData, OISpurtsData } from "@/lib/types";
 
-const BASE_URL = "https://www.nseindia.com/api";
+const BASE_URL = "/api/nse";
 
 async function fetchNse<T>(url: string): Promise<T> {
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      Accept: "application/json",
-      Referer: "https://www.nseindia.com/",
-    },
-  });
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`NSE API error: ${response.status} ${response.statusText}`);
   }

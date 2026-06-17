@@ -5,6 +5,7 @@ import { useNseData } from "@/hooks/use-nse-data";
 import { SectorGrid } from "@/components/sector-grid";
 import { SectorDrilldown } from "@/components/sector-drilldown";
 import { PerformanceCharts } from "@/components/performance-charts";
+import { OISpurts } from "@/components/oi-spurts";
 import { Separator } from "@/components/ui/separator";
 
 export default function Home() {
@@ -74,6 +75,8 @@ export default function Home() {
               stocks={stocks}
               selectedSector={selectedSector}
             />
+            <Separator className="my-8" />
+            <OISpurts data={oiSpurts} />
           </>
         )}
       </main>

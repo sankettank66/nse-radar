@@ -3,10 +3,13 @@
 import { useState, useEffect, useRef } from "react";
 import type { IndexQuote } from "@/lib/types";
 
+type MessageParser = (raw: string) => IndexQuote | null;
+
 interface IndexConfig {
   key: string;
   label: string;
   url: string;
+  parser?: MessageParser;
 }
 
 interface UseIndexWsOptions {
@@ -76,12 +79,18 @@ export function useIndexWs(
       ws.onmessage = (event) => {
         if (!mountedRef.current) return;
         try {
-          const data = JSON.parse(event.data) as IndexQuote;
-          if (data.currentPrice != null) {
+          let data: IndexQuote | null = null;
+          if (idx.parser) {
+            data = idx.parser(event.data);
+          } else {
+            data = JSON.parse(event.data) as IndexQuote;
+            if (data.currentPrice == null) data = null;
+          }
+          if (data) {
             setQuotes((prev) => ({ ...prev, [idx.key]: data }));
           }
         } catch {
-          // non-JSON message
+          // parse failure — ignore
         }
       };
 

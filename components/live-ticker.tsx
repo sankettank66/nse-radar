@@ -1,7 +1,26 @@
 "use client";
 
 import { useIndexWs } from "@/hooks/use-index-ws";
+import type { IndexQuote } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+function parseBseSensex(raw: string): IndexQuote | null {
+  if (!raw.startsWith("42")) return null;
+  const payload = JSON.parse(raw.slice(2));
+  if (payload[0] !== "SensexIndicativePrice") return null;
+  const d = JSON.parse(payload[1]);
+  return {
+    indexName: "SENSEX",
+    currentPrice: Number(d.indexValue),
+    change: Number(d.percChange),
+    perChange: Number(d.percChange2),
+    previousClose: Number(d.indexClose),
+    open: Number(d.indexOpen),
+    high: Number(d.indexHigh),
+    low: Number(d.indexLow),
+    mktStatus: d.session === "3" ? "Open" : "Close",
+  };
+}
 
 const INDICES = [
   {
@@ -10,9 +29,10 @@ const INDICES = [
     url: "wss://streamer.nseindia.com/streams/indices/high/nifty50?index=nifty%2050",
   },
   {
-    key: "banknifty",
-    label: "BANKNIFTY",
-    url: "wss://streamer.nseindia.com/streams/indices/high/banknifty?index=bank%20nifty",
+    key: "sensex",
+    label: "SENSEX",
+    url: "wss://bnotification.bseindia.com/socket.io/?EIO=4&transport=websocket",
+    parser: parseBseSensex,
   },
 ];
 

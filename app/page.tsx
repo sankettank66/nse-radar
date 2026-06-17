@@ -6,6 +6,7 @@ import { SectorGrid } from "@/components/sector-grid";
 import { SectorDrilldown } from "@/components/sector-drilldown";
 import { PerformanceCharts } from "@/components/performance-charts";
 import { OISpurts } from "@/components/oi-spurts";
+import { Analytics } from "@/components/analytics";
 import { Separator } from "@/components/ui/separator";
 
 export default function Home() {
@@ -74,6 +75,8 @@ export default function Home() {
               }
               selectedSector={selectedSector}
             />
+            <Separator className="my-8" />
+            <Analytics sectors={sectors} oiSpurts={oiSpurts} />
             <Separator className="my-8" />
             <PerformanceCharts
               sectors={sectors}

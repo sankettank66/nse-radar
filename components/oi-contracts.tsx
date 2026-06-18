@@ -230,6 +230,12 @@ function ContractTable({ contracts }: { contracts: OiContract[] }) {
               </TableHead>
               <TableHead
                 className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground"
+                onClick={() => toggleSort("strikePrice")}
+              >
+                Strike <SortIcon columnKey="strikePrice" />
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground"
                 onClick={() => toggleSort("ltp")}
               >
                 LTP <SortIcon columnKey="ltp" />
@@ -269,7 +275,7 @@ function ContractTable({ contracts }: { contracts: OiContract[] }) {
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground text-sm">
+                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground text-sm">
                   No contracts found for this category
                 </TableCell>
               </TableRow>
@@ -302,6 +308,9 @@ function ContractTable({ contracts }: { contracts: OiContract[] }) {
                           {optionLabel(c)}
                         </span>
                       )}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm tabular-nums text-muted-foreground">
+                      {c.instrumentType === "OPTSTK" ? formatPrice(c.strikePrice) : "—"}
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm tabular-nums">
                       {formatPrice(c.ltp)}

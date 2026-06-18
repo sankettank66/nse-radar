@@ -1,7 +1,7 @@
 "use client";
 
 import type { OISpurtEntry } from "@/lib/types";
-import { formatPercent, formatVolume, getChangeColor } from "@/lib/utils";
+import { formatPercent, formatPrice, formatVolume, getChangeColor } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -54,6 +54,12 @@ export function OISpurts({ data }: OISpurtsProps) {
                   Symbol <SortIcon columnKey="symbol" />
                 </TableHead>
                 <TableHead
+                  className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground hidden sm:table-cell"
+                  onClick={() => toggleSort("underlyingValue")}
+                >
+                  Underlying <SortIcon columnKey="underlyingValue" />
+                </TableHead>
+                <TableHead
                   className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground"
                   onClick={() => toggleSort("latestOI")}
                 >
@@ -84,6 +90,9 @@ export function OISpurts({ data }: OISpurtsProps) {
                 <TableRow key={entry.symbol} className="border-t border-border hover:bg-muted/50">
                   <TableCell className="font-medium text-sm">
                     {entry.symbol}
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-sm tabular-nums text-muted-foreground hidden sm:table-cell">
+                    {formatPrice(entry.underlyingValue)}
                   </TableCell>
                   <TableCell className="text-right font-mono text-sm tabular-nums">
                     {formatVolume(entry.latestOI)}

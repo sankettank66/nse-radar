@@ -92,4 +92,7 @@ export interface SignalEntry {
   ltp: number;
   underlyingValue: number;
   prevClose: number;
+  spurtsAvgInOI: number | null;
+  spurtsOIChg: number | null;
+  confluence: number;
 }

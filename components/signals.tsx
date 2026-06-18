@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import type { OiContract, SignalEntry } from "@/lib/types";
+import type { OiContract, OISpurtEntry, SignalEntry } from "@/lib/types";
 import { fetchOiContracts, fetchOISpurts } from "@/lib/api";
 import { formatPercent, formatPrice, formatVolume } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -25,6 +25,7 @@ const STOCK_TYPES = new Set(["FUTSTK"]);
 
 function computeSignals(
   contracts: Record<string, unknown[]> | null,
+  spurtsMap: Map<string, OISpurtEntry>,
 ): SignalEntry[] {
   if (!contracts) return [];
 
@@ -37,41 +38,44 @@ function computeSignals(
     (c) => STOCK_TYPES.has(c.instrumentType),
   );
 
-  for (const c of bullishRaw) {
+  const allScores: number[] = [];
+
+  function processContract(c: OiContract, direction: "bullish" | "bearish") {
     const score =
       Math.abs(c.changeInOI) * Math.abs(c.pChange) * Math.log10(c.volume + 1);
-    if (score > 0) {
-      results.push({
-        symbol: c.symbol,
-        direction: "bullish",
-        signalScore: score,
-        changeInOI: c.changeInOI,
-        pChange: c.pChange,
-        volume: c.volume,
-        ltp: c.ltp,
-        underlyingValue: c.underlyingValue,
-        prevClose: c.prevClose,
-      });
+    if (score <= 0) return;
+    const spurts = spurtsMap.get(c.symbol);
+    const spurtsAvg = spurts?.avgInOI ?? null;
+    const spurtsOIChg = spurts?.changeInOI ?? null;
+
+    let confluence = 0;
+    if (spurts) {
+      confluence += 1;
+      const sameDirection =
+        direction === "bullish" ? spurts.avgInOI > 0 : spurts.avgInOI < 0;
+      if (sameDirection) confluence += 1;
+      if (Math.abs(spurts.avgInOI) > 5) confluence += 1;
     }
+
+    results.push({
+      symbol: c.symbol,
+      direction,
+      signalScore: score,
+      changeInOI: c.changeInOI,
+      pChange: c.pChange,
+      volume: c.volume,
+      ltp: c.ltp,
+      underlyingValue: c.underlyingValue,
+      prevClose: c.prevClose,
+      spurtsAvgInOI: spurtsAvg,
+      spurtsOIChg,
+      confluence,
+    });
+    allScores.push(score);
   }
 
-  for (const c of bearishRaw) {
-    const score =
-      Math.abs(c.changeInOI) * Math.abs(c.pChange) * Math.log10(c.volume + 1);
-    if (score > 0) {
-      results.push({
-        symbol: c.symbol,
-        direction: "bearish",
-        signalScore: score,
-        changeInOI: c.changeInOI,
-        pChange: c.pChange,
-        volume: c.volume,
-        ltp: c.ltp,
-        underlyingValue: c.underlyingValue,
-        prevClose: c.prevClose,
-      });
-    }
-  }
+  for (const c of bullishRaw) processContract(c, "bullish");
+  for (const c of bearishRaw) processContract(c, "bearish");
 
   results.sort((a, b) => b.signalScore - a.signalScore);
   return results;
@@ -87,16 +91,26 @@ function scoreColor(score: number, maxScore: number): string {
 
 export function Signals() {
   const [data, setData] = useState<Record<string, unknown[]> | null>(null);
+  const [spurtsMap, setSpurtsMap] = useState<Map<string, OISpurtEntry>>(new Map());
   const [loading, setLoading] = useState(true);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadData = useCallback(async () => {
     try {
-      const res = await fetchOiContracts();
-      const raw = Array.isArray(res.data)
-        ? res.data.reduce((acc, obj) => ({ ...acc, ...obj }), {})
-        : res.data;
+      const [contractsRes, spurtsRes] = await Promise.all([
+        fetchOiContracts(),
+        fetchOISpurts(),
+      ]);
+      const raw = Array.isArray(contractsRes.data)
+        ? contractsRes.data.reduce((acc, obj) => ({ ...acc, ...obj }), {})
+        : contractsRes.data;
       setData(raw);
+
+      const map = new Map<string, OISpurtEntry>();
+      for (const entry of spurtsRes.data) {
+        map.set(entry.symbol, entry);
+      }
+      setSpurtsMap(map);
     } catch {
       // non-critical
     }
@@ -111,13 +125,13 @@ export function Signals() {
     };
   }, [loadData]);
 
-  const signals = useMemo(() => computeSignals(data), [data]);
+  const signals = useMemo(() => computeSignals(data, spurtsMap), [data, spurtsMap]);
   const bullish = useMemo(
-    () => signals.filter((s) => s.direction === "bullish").slice(0, 30),
+    () => signals.filter((s) => s.direction === "bullish").slice(0, 50),
     [signals],
   );
   const bearish = useMemo(
-    () => signals.filter((s) => s.direction === "bearish").slice(0, 30),
+    () => signals.filter((s) => s.direction === "bearish").slice(0, 50),
     [signals],
   );
 
@@ -151,6 +165,22 @@ export function Signals() {
   );
 }
 
+function ConfDots({ level }: { level: number }) {
+  return (
+    <span className="inline-flex items-center gap-[2px]">
+      {[1, 2, 3].map((i) => (
+        <span
+          key={i}
+          className={cn(
+            "inline-block size-[6px] rounded-full",
+            i <= level ? "bg-primary" : "bg-border",
+          )}
+        />
+      ))}
+    </span>
+  );
+}
+
 function SignalCard({
   title,
   description,
@@ -179,13 +209,18 @@ function SignalCard({
   return (
     <Card className="rounded-xl border border-border shadow-none">
       <CardHeader className="px-6 pt-6 pb-4">
-        <div>
-          <CardTitle className="text-[18px] font-semibold tracking-tight">
-            {title}
-          </CardTitle>
-          <p className="text-[13px] text-muted-foreground mt-1">
-            {description}
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-[18px] font-semibold tracking-tight">
+              {title}
+            </CardTitle>
+            <p className="text-[13px] text-muted-foreground mt-1">
+              {description}
+            </p>
+          </div>
+          <span className="text-[13px] text-muted-foreground tabular-nums font-mono">
+            {signals.length}
+          </span>
         </div>
       </CardHeader>
       <CardContent className="p-0 pb-4">
@@ -198,9 +233,7 @@ function SignalCard({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground w-8">
-                    #
-                  </TableHead>
+                  <TableHead className="w-6" />
                   <TableHead
                     className="cursor-pointer select-none text-[13px] font-semibold uppercase tracking-wider text-muted-foreground"
                     onClick={() => toggleSort("symbol")}
@@ -220,6 +253,12 @@ function SignalCard({
                     OI Chg <SortIcon columnKey="changeInOI" />
                   </TableHead>
                   <TableHead
+                    className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground hidden sm:table-cell"
+                    onClick={() => toggleSort("spurtsAvgInOI")}
+                  >
+                    Spurts% <SortIcon columnKey="spurtsAvgInOI" />
+                  </TableHead>
+                  <TableHead
                     className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground"
                     onClick={() => toggleSort("pChange")}
                   >
@@ -229,7 +268,7 @@ function SignalCard({
                     LTP
                   </TableHead>
                   <TableHead className="text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground hidden lg:table-cell">
-                    Prev Close
+                    Prev
                   </TableHead>
                   <TableHead
                     className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground hidden md:table-cell"
@@ -242,14 +281,19 @@ function SignalCard({
               <TableBody>
                 {sortedData.map((s, i) => (
                   <TableRow
-                    key={s.symbol}
+                    key={`${s.symbol}-${i}`}
                     className="border-t border-border hover:bg-muted/50"
                   >
-                    <TableCell className="text-[13px] text-muted-foreground tabular-nums">
-                      {i + 1}
+                    <TableCell className="pr-0">
+                      <ConfDots level={s.confluence} />
                     </TableCell>
                     <TableCell className="font-medium text-sm">
                       {s.symbol}
+                      {s.spurtsAvgInOI !== null && (
+                        <span className="ml-1.5 text-[10px] text-muted-foreground font-mono">
+                          ✓
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <span
@@ -277,6 +321,21 @@ function SignalCard({
                       >
                         {s.changeInOI >= 0 ? "+" : ""}
                         {formatVolume(Math.abs(s.changeInOI))}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right hidden sm:table-cell">
+                      <span
+                        className={`font-mono text-sm tabular-nums ${
+                          s.spurtsAvgInOI !== null && s.spurtsAvgInOI >= 0
+                            ? "text-semantic-up"
+                            : s.spurtsAvgInOI !== null && s.spurtsAvgInOI < 0
+                              ? "text-semantic-down"
+                              : "text-muted-foreground"
+                        }`}
+                      >
+                        {s.spurtsAvgInOI !== null
+                          ? formatPercent(s.spurtsAvgInOI)
+                          : "—"}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">

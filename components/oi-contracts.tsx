@@ -241,6 +241,12 @@ function ContractTable({ contracts }: { contracts: OiContract[] }) {
                 LTP <SortIcon columnKey="ltp" />
               </TableHead>
               <TableHead
+                className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground hidden sm:table-cell"
+                onClick={() => toggleSort("underlyingValue")}
+              >
+                Underlying <SortIcon columnKey="underlyingValue" />
+              </TableHead>
+              <TableHead
                 className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground"
                 onClick={() => toggleSort("pChange")}
               >
@@ -275,7 +281,7 @@ function ContractTable({ contracts }: { contracts: OiContract[] }) {
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground text-sm">
+                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground text-sm">
                   No contracts found for this category
                 </TableCell>
               </TableRow>
@@ -314,6 +320,9 @@ function ContractTable({ contracts }: { contracts: OiContract[] }) {
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm tabular-nums">
                       {formatPrice(c.ltp)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm tabular-nums text-muted-foreground hidden sm:table-cell">
+                      {formatPrice(c.underlyingValue)}
                     </TableCell>
                     <TableCell className="text-right">
                       <span

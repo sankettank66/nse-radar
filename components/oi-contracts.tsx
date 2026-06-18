@@ -51,15 +51,19 @@ export function OiContracts() {
   const [data, setData] = useState<Record<string, OiContract[]> | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<string>(CATEGORIES[0].key);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const initialSelectionRef = useRef(false);
 
   const loadData = useCallback(async (isInitial = false) => {
     if (isInitial) setLoading(true);
     else setRefreshing(true);
     try {
       const res = await fetchOiContracts();
-      const raw = Array.isArray(res.data) ? res.data[0] : res.data;
+      const raw = Array.isArray(res.data)
+        ? res.data.reduce((acc, obj) => ({ ...acc, ...obj }), {})
+        : res.data;
+      console.log("Fetched and merged OI contracts data:", raw);
       setData(raw);
     } catch {
       // non-critical
@@ -77,28 +81,27 @@ export function OiContracts() {
   }, [loadData]);
 
   useEffect(() => {
-    if (data) {
-      const cats = CATEGORIES.filter(
-        (cat) => data[cat.key] && data[cat.key].some(isStockContract)
+    if (data && !initialSelectionRef.current) {
+      const availableCats = CATEGORIES.filter(
+        (cat) => (data[cat.key] ?? []).some(isStockContract)
       );
-      if (cats.length > 0 && (!activeTab || !cats.some((c) => c.key === activeTab))) {
-        setActiveTab(cats[0].key);
+      console.log("Available categories with stock contracts:", availableCats.map(c => c.key), data);
+      if (availableCats.length > 0) {
+        setActiveTab(availableCats[0].key);
       }
+      initialSelectionRef.current = true;
     }
-  }, [data, activeTab]);
+  }, [data]);
 
   if (loading) return null;
 
-  const activeCategories = CATEGORIES.filter(
-    (cat) => data?.[cat.key] && data[cat.key].some(isStockContract)
-  );
-
-  if (activeCategories.length === 0) return null;
-
-  const activeCat = activeCategories.find((c) => c.key === activeTab) ?? activeCategories[0];
+  const activeCat = CATEGORIES.find((c) => c.key === activeTab) ?? CATEGORIES[0];
 
   const contractCounts = Object.fromEntries(
-    activeCategories.map((cat) => [cat.key, (data?.[cat.key] ?? []).filter(isStockContract).length])
+    CATEGORIES.map((cat) => [
+      cat.key,
+      (data?.[cat.key] ?? []).filter(isStockContract).length,
+    ])
   );
 
   return (
@@ -123,7 +126,7 @@ export function OiContracts() {
         {/* Desktop: pill tab buttons */}
         <div className="hidden sm:block px-6 mb-4">
           <div className="inline-flex items-center gap-1 rounded-lg bg-muted p-[3px]">
-            {activeCategories.map((cat) => (
+            {CATEGORIES.map((cat) => (
               <button
                 key={cat.key}
                 onClick={() => setActiveTab(cat.key)}
@@ -150,7 +153,7 @@ export function OiContracts() {
             onChange={(e) => setActiveTab(e.target.value)}
             className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
-            {activeCategories.map((cat) => (
+            {CATEGORIES.map((cat) => (
               <option key={cat.key} value={cat.key}>
                 {cat.short} — {cat.label} ({contractCounts[cat.key]})
               </option>

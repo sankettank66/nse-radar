@@ -81,3 +81,15 @@ export interface OiContractsResponse {
   currTradingDate: string;
   prevTradingDate: string;
 }
+
+export interface SignalEntry {
+  symbol: string;
+  direction: "bullish" | "bearish";
+  signalScore: number;
+  changeInOI: number;
+  pChange: number;
+  volume: number;
+  ltp: number;
+  underlyingValue: number;
+  prevClose: number;
+}

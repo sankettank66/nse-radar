@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/#charts", label: "Charts" },
   { href: "/#oi-spurts", label: "OI Spurts" },
   { href: "/oi-contracts", label: "OI Contracts" },
+  { href: "/signals", label: "Signals" },
 ];
 
 export function SiteNav() {
@@ -17,6 +18,7 @@ export function SiteNav() {
 
   function isActive(href: string): boolean {
     if (href === "/oi-contracts") return pathname === "/oi-contracts";
+    if (href === "/signals") return pathname === "/signals";
     return pathname === "/";
   }
 

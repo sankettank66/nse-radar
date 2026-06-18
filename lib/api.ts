@@ -3,6 +3,8 @@ import type {
   SectorStock,
   OISpurtsData,
   OiContractsResponse,
+  SnapshotDerivativeEntry,
+  SnapshotDerivativesResponse,
 } from "@/lib/types";
 
 const BASE_URL = "/api/nse";
@@ -37,4 +39,17 @@ export function fetchOiContracts(): Promise<OiContractsResponse> {
   return fetchNse<OiContractsResponse>(
     `${BASE_URL}/live-analysis-oi-spurts-contracts`
   );
+}
+
+export function fetchSnapshotDerivatives(index: string): Promise<SnapshotDerivativesResponse> {
+  return fetchNse<SnapshotDerivativesResponse>(
+    `${BASE_URL}/snapshot-derivatives-equity?index=${encodeURIComponent(index)}`
+  );
+}
+
+export function extractSnapshotEntries(res: SnapshotDerivativesResponse): SnapshotDerivativeEntry[] {
+  const key = Object.keys(res)[0];
+  const nested = key ? res[key] : undefined;
+  if (nested?.data) return nested.data;
+  return [];
 }

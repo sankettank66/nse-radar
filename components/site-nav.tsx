@@ -88,7 +88,7 @@ export function SiteNav() {
               className={cn(
                 "rounded-[100px] no-underline transition-all",
                 active
-                  ? "text-muted-foreground/20 pointer-events-none mx-0.5"
+                  ? "bg-accent text-foreground font-medium px-3 py-1 pointer-events-none"
                   : "px-3 py-1 hover:bg-accent",
               )}
             >

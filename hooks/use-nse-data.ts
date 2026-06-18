@@ -7,6 +7,7 @@ import {
   fetchOISpurts,
 } from "@/lib/api";
 import type { SectorIndex, SectorStock, OISpurtEntry } from "@/lib/types";
+import { isMarketOpen } from "@/lib/utils";
 
 interface UseNseDataOptions {
   refreshInterval?: number;
@@ -82,7 +83,9 @@ export function useNseData(
   useEffect(() => {
     loadAll(true);
 
-    intervalRef.current = setInterval(() => loadAll(false), refreshInterval);
+    if (isMarketOpen()) {
+      intervalRef.current = setInterval(() => loadAll(false), refreshInterval);
+    }
 
     return () => {
       if (intervalRef.current) {

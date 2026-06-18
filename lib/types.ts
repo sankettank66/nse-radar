@@ -82,6 +82,41 @@ export interface OiContractsResponse {
   prevTradingDate: string;
 }
 
+export interface SnapshotDerivativeEntry {
+  identifier: string;
+  instrumentType: string;
+  instrument: string;
+  underlying: string;
+  expiryDate: string;
+  optionType: string;
+  strikePrice: number;
+  lastPrice: number;
+  numberOfContractsTraded: number;
+  totalTurnover: number;
+  premiumTurnover: number;
+  openInterest: number;
+  underlyingValue: number;
+  pChange: number;
+}
+
+export interface SnapshotDerivativesResponse {
+  [instrumentType: string]: {
+    data: SnapshotDerivativeEntry[];
+    timestamp: string;
+  };
+}
+
+export interface OptionsActivity {
+  callVolume: number;
+  putVolume: number;
+  callOIChg: number;
+  putOIChg: number;
+  callPremTurnover: number;
+  putPremTurnover: number;
+  callContracts: number;
+  putContracts: number;
+}
+
 export interface SignalEntry {
   symbol: string;
   direction: "bullish" | "bearish";
@@ -95,4 +130,6 @@ export interface SignalEntry {
   spurtsAvgInOI: number | null;
   spurtsOIChg: number | null;
   confluence: number;
+  optionsPCR: number | null;
+  optionsAlignment: "confirming" | "neutral" | "contradicting" | null;
 }

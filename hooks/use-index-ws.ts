@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import type { IndexQuote } from "@/lib/types";
+import { isMarketOpen } from "@/lib/utils";
 
 type MessageParser = (raw: string) => IndexQuote | null;
 
@@ -52,6 +53,11 @@ export function useIndexWs(
 
   useEffect(() => {
     mountedRef.current = true;
+
+    if (!isMarketOpen()) {
+      setConnected(false);
+      return;
+    }
 
     function connectOne(idx: IndexConfig) {
       const existing = wsRefs.current.get(idx.key);

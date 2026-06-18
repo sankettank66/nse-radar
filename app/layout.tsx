@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Raleway, JetBrains_Mono, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 
-const interSans = Inter({
+const ralewaySans = Raleway({
   variable: "--font-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const cormorantGaramond = Cormorant_Garamond({
+  variable: "--font-heading",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
@@ -27,7 +33,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${interSans.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${ralewaySans.variable} ${cormorantGaramond.variable} ${jetbrainsMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>

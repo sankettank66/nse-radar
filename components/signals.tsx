@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import type { OiContract, OISpurtEntry, SignalEntry } from "@/lib/types";
-import { fetchOiContracts, fetchOISpurts } from "@/lib/api";
-import { formatPercent, formatPrice, formatVolume } from "@/lib/utils";
+import type { OiContract, OISpurtEntry, SignalEntry, OptionsActivity, SnapshotDerivativeEntry } from "@/lib/types";
+import { fetchOiContracts, fetchOISpurts, fetchSnapshotDerivatives, extractSnapshotEntries } from "@/lib/api";
+import { formatPercent, formatPrice, formatVolume, isMarketOpen } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import {
   Card,
@@ -20,12 +20,78 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useSort } from "@/hooks/use-sort";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const STOCK_TYPES = new Set(["FUTSTK"]);
+
+function computeOptionsMultiplier(
+  direction: "bullish" | "bearish",
+  activity: OptionsActivity | undefined,
+): { multiplier: number; pcr: number | null; alignment: "confirming" | "neutral" | "contradicting" | null } {
+  if (!activity || (activity.callVolume === 0 && activity.putVolume === 0)) {
+    return { multiplier: 1, pcr: null, alignment: null };
+  }
+
+  const pcr = activity.putVolume / (activity.callVolume || 1);
+  let multiplier = 1;
+  let alignment: "confirming" | "neutral" | "contradicting" | null = "neutral";
+
+  if (direction === "bullish") {
+    if (pcr < 0.7) { alignment = "confirming"; multiplier = 1.5; }
+    else if (pcr < 0.9) { alignment = "confirming"; multiplier = 1.25; }
+    else if (pcr <= 1.1) { alignment = "neutral"; multiplier = 1; }
+    else if (pcr <= 1.5) { alignment = "contradicting"; multiplier = 0.75; }
+    else { alignment = "contradicting"; multiplier = 0.5; }
+  } else {
+    if (pcr > 1.5) { alignment = "confirming"; multiplier = 1.5; }
+    else if (pcr > 1.1) { alignment = "confirming"; multiplier = 1.25; }
+    else if (pcr >= 0.9) { alignment = "neutral"; multiplier = 1; }
+    else if (pcr >= 0.7) { alignment = "contradicting"; multiplier = 0.75; }
+    else { alignment = "contradicting"; multiplier = 0.5; }
+  }
+
+  return { multiplier, pcr, alignment };
+}
+
+function buildOptionsActivityMap(
+  calls: SnapshotDerivativeEntry[],
+  puts: SnapshotDerivativeEntry[],
+): Map<string, OptionsActivity> {
+  const map = new Map<string, OptionsActivity>();
+
+  for (const c of calls) {
+    const existing = map.get(c.underlying) ?? {
+      callVolume: 0, putVolume: 0,
+      callOIChg: 0, putOIChg: 0,
+      callPremTurnover: 0, putPremTurnover: 0,
+      callContracts: 0, putContracts: 0,
+    };
+    existing.callVolume += c.numberOfContractsTraded;
+    existing.callPremTurnover += c.premiumTurnover;
+    existing.callContracts += 1;
+    map.set(c.underlying, existing);
+  }
+
+  for (const p of puts) {
+    const existing = map.get(p.underlying) ?? {
+      callVolume: 0, putVolume: 0,
+      callOIChg: 0, putOIChg: 0,
+      callPremTurnover: 0, putPremTurnover: 0,
+      callContracts: 0, putContracts: 0,
+    };
+    existing.putVolume += p.numberOfContractsTraded;
+    existing.putPremTurnover += p.premiumTurnover;
+    existing.putContracts += 1;
+    map.set(p.underlying, existing);
+  }
+
+  return map;
+}
 
 function computeSignals(
   contracts: Record<string, unknown[]> | null,
   spurtsMap: Map<string, OISpurtEntry>,
+  optionsActivity: Map<string, OptionsActivity>,
 ): SignalEntry[] {
   if (!contracts) return [];
 
@@ -41,8 +107,10 @@ function computeSignals(
   const allScores: number[] = [];
 
   function processContract(c: OiContract, direction: "bullish" | "bearish") {
+    const opts = optionsActivity.get(c.symbol);
+    const { multiplier, pcr, alignment } = computeOptionsMultiplier(direction, opts);
     const score =
-      Math.abs(c.changeInOI) * Math.abs(c.pChange) * Math.log10(c.volume + 1);
+      Math.abs(c.changeInOI) * Math.abs(c.pChange) * Math.log10(c.volume + 1) * multiplier;
     if (score <= 0) return;
     const spurts = spurtsMap.get(c.symbol);
     const spurtsAvg = spurts?.avgInOI ?? null;
@@ -70,6 +138,8 @@ function computeSignals(
       spurtsAvgInOI: spurtsAvg,
       spurtsOIChg,
       confluence,
+      optionsPCR: pcr,
+      optionsAlignment: alignment,
     });
     allScores.push(score);
   }
@@ -92,14 +162,17 @@ function scoreColor(score: number, maxScore: number): string {
 export function Signals() {
   const [data, setData] = useState<Record<string, unknown[]> | null>(null);
   const [spurtsMap, setSpurtsMap] = useState<Map<string, OISpurtEntry>>(new Map());
+  const [optionsActivity, setOptionsActivity] = useState<Map<string, OptionsActivity>>(new Map());
   const [loading, setLoading] = useState(true);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadData = useCallback(async () => {
     try {
-      const [contractsRes, spurtsRes] = await Promise.all([
+      const [contractsRes, spurtsRes, callsData, putsData] = await Promise.all([
         fetchOiContracts(),
         fetchOISpurts(),
+        fetchSnapshotDerivatives("calls-stocks-vol"),
+        fetchSnapshotDerivatives("puts-stocks-vol"),
       ]);
       const raw = Array.isArray(contractsRes.data)
         ? contractsRes.data.reduce((acc, obj) => ({ ...acc, ...obj }), {})
@@ -111,6 +184,8 @@ export function Signals() {
         map.set(entry.symbol, entry);
       }
       setSpurtsMap(map);
+
+      setOptionsActivity(buildOptionsActivityMap(extractSnapshotEntries(callsData), extractSnapshotEntries(putsData)));
     } catch {
       // non-critical
     }
@@ -119,13 +194,15 @@ export function Signals() {
 
   useEffect(() => {
     loadData();
-    intervalRef.current = setInterval(loadData, 60_000);
+    if (isMarketOpen()) {
+      intervalRef.current = setInterval(loadData, 60_000);
+    }
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [loadData]);
 
-  const signals = useMemo(() => computeSignals(data, spurtsMap), [data, spurtsMap]);
+  const signals = useMemo(() => computeSignals(data, spurtsMap, optionsActivity), [data, spurtsMap, optionsActivity]);
   const bullish = useMemo(
     () => signals.filter((s) => s.direction === "bullish").slice(0, 50),
     [signals],
@@ -140,8 +217,9 @@ export function Signals() {
 
   if (loading)
     return (
-      <div className="flex items-center justify-center py-32">
-        <div className="size-8 animate-spin rounded-full border-2 border-border border-t-primary" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <SignalsSkeleton />
+        <SignalsSkeleton />
       </div>
     );
 
@@ -178,6 +256,62 @@ function ConfDots({ level }: { level: number }) {
         />
       ))}
     </span>
+  );
+}
+
+function SignalsSkeleton() {
+  const widths = [
+    ["w-20", "w-14", "w-16", "w-12", "w-16", "w-14", "w-14", "w-16"],
+    ["w-24", "w-12", "w-20", "w-14", "w-18", "w-12", "w-16", "w-14"],
+    ["w-16", "w-16", "w-14", "w-10", "w-20", "w-16", "w-12", "w-18"],
+    ["w-22", "w-14", "w-18", "w-12", "w-14", "w-18", "w-14", "w-12"],
+    ["w-18", "w-18", "w-12", "w-16", "w-16", "w-10", "w-18", "w-16"],
+    ["w-20", "w-10", "w-16", "w-14", "w-20", "w-14", "w-12", "w-14"],
+    ["w-14", "w-16", "w-20", "w-10", "w-16", "w-20", "w-16", "w-12"],
+    ["w-24", "w-12", "w-14", "w-18", "w-12", "w-12", "w-20", "w-16"],
+  ];
+  return (
+    <Card className="rounded-xl border border-border shadow-none">
+      <CardHeader className="px-6 pt-6 pb-4">
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-4 w-56 mt-2" />
+      </CardHeader>
+      <CardContent className="px-6 pb-4">
+        {/* header row */}
+        <div className="flex items-center gap-3 mb-3 pb-2 border-b border-border">
+          <div className="flex gap-[2px] w-[18px] shrink-0">
+            <Skeleton className="h-[6px] w-[6px] rounded-full" />
+            <Skeleton className="h-[6px] w-[6px] rounded-full" />
+            <Skeleton className="h-[6px] w-[6px] rounded-full" />
+          </div>
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-4 w-10 ml-auto" />
+          <Skeleton className="h-4 w-12 ml-auto" />
+          <Skeleton className="h-4 w-12 ml-auto hidden sm:block" />
+          <Skeleton className="h-4 w-10 ml-auto" />
+          <Skeleton className="h-4 w-12 ml-auto hidden sm:block" />
+          <Skeleton className="h-4 w-12 ml-auto hidden lg:block" />
+          <Skeleton className="h-4 w-10 ml-auto hidden md:block" />
+        </div>
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3 py-2.5 border-b border-border last:border-0">
+            <div className="flex gap-[2px] w-[18px] shrink-0">
+              {[0, 1, 2].map((d) => (
+                <Skeleton key={d} className={`${["h-[6px] w-[6px]", "h-[4px] w-[4px]", "h-[8px] w-[8px]"][(i + d) % 3]} rounded-full`} />
+              ))}
+            </div>
+            <Skeleton className={`h-4 ${widths[i][0]}`} />
+            <Skeleton className={`h-5 ${widths[i][1]} ml-auto`} />
+            <Skeleton className={`h-4 ${widths[i][2]} ml-auto`} />
+            <Skeleton className={`h-4 ${widths[i][3]} ml-auto hidden sm:block`} />
+            <Skeleton className={`h-4 ${widths[i][4]} ml-auto`} />
+            <Skeleton className={`h-4 ${widths[i][5]} ml-auto hidden sm:block`} />
+            <Skeleton className={`h-4 ${widths[i][6]} ml-auto hidden lg:block`} />
+            <Skeleton className={`h-4 ${widths[i][7]} ml-auto hidden md:block`} />
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -229,7 +363,7 @@ function SignalCard({
             No signals found
           </p>
         ) : (
-          <div className="overflow-x-auto px-6">
+          <div className="overflow-x-auto px-6 scrollbar-hide">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -263,6 +397,12 @@ function SignalCard({
                     onClick={() => toggleSort("pChange")}
                   >
                     Chg% <SortIcon columnKey="pChange" />
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground hidden sm:table-cell"
+                    onClick={() => toggleSort("optionsPCR")}
+                  >
+                    PCR <SortIcon columnKey="optionsPCR" />
                   </TableHead>
                   <TableHead className="text-right text-[13px] font-semibold uppercase tracking-wider text-muted-foreground hidden sm:table-cell">
                     LTP
@@ -348,6 +488,26 @@ function SignalCard({
                       >
                         {formatPercent(s.pChange)}
                       </span>
+                    </TableCell>
+                    <TableCell className="text-right hidden sm:table-cell">
+                      {s.optionsPCR !== null ? (
+                        <span
+                          className={`font-mono text-sm tabular-nums ${
+                            s.optionsAlignment === "confirming"
+                              ? "text-semantic-up"
+                              : s.optionsAlignment === "contradicting"
+                                ? "text-semantic-down"
+                                : "text-muted-foreground"
+                          }`}
+                        >
+                          {s.optionsPCR.toFixed(2)}
+                          <span className="ml-0.5 text-[10px]">
+                            {s.optionsPCR < 1 ? "C" : "P"}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm tabular-nums text-muted-foreground hidden sm:table-cell">
                       {formatPrice(s.ltp)}

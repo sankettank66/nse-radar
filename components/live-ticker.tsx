@@ -1,7 +1,7 @@
 "use client";
 
 import { useIndexWs } from "@/hooks/use-index-ws";
-import { cn } from "@/lib/utils";
+import { cn, getMarketStatus, type MarketStatus } from "@/lib/utils";
 
 const INDICES = [
   {
@@ -11,8 +11,16 @@ const INDICES = [
   },
 ];
 
+const statusConfig: Record<MarketStatus, { label: string; className: string }> = {
+  "pre-market": { label: "Pre Market", className: "bg-amber-500/15 text-amber-500" },
+  live: { label: "Live", className: "bg-semantic-up/15 text-semantic-up" },
+  closed: { label: "Closed", className: "bg-muted text-muted-foreground" },
+};
+
 export function LiveTicker() {
   const { quotes, connected } = useIndexWs({ indices: INDICES });
+  const status = getMarketStatus();
+  const cfg = statusConfig[status];
 
   return (
     <div className="flex items-center divide-x divide-border">
@@ -26,7 +34,10 @@ export function LiveTicker() {
             <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
               {idx.label}
             </span>
-            {q ? (
+            <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider", cfg.className)}>
+              {cfg.label}
+            </span>
+            {q && status !== "closed" ? (
               <>
                 <span className="font-mono text-[14px] font-semibold tabular-nums text-foreground">
                   {q.currentPrice.toLocaleString("en-IN", {
@@ -55,7 +66,7 @@ export function LiveTicker() {
                   {q.perChange.toFixed(2)}%)
                 </span>
               </>
-            ) : (
+            ) : status === "closed" ? null : (
               <span className="font-mono text-[12px] text-muted-foreground">
                 {connected ? "..." : "-"}
               </span>

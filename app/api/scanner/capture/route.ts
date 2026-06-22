@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { connectDB, formatTimeSlot, formatDate } from "@/lib/mongodb";
 import { ScannerSnapshot, ScannerEntry } from "@/lib/models/scanner-snapshot";
-import { fetchFuturesSnapshot, fetchOISpurts, fetchMostActiveUnderlying, extractSnapshotEntries } from "@/lib/api";
+import { extractSnapshotEntries } from "@/lib/api";
 import { consolidateFutures } from "@/lib/nse-data";
 import { enrichScannerData, computeConfluence } from "@/lib/scanner-engine";
-import type { OISpurtEntry } from "@/lib/types";
+import type { OISpurtEntry, MostActiveUnderlyingEntry, SnapshotDerivativesResponse, OISpurtsData } from "@/lib/types";
 import type { EnrichedEntry } from "@/lib/scanner-engine";
 
 function isMarketHours(): boolean {
@@ -50,7 +50,7 @@ function toEntryShape(e: EnrichedEntry, rank: number) {
   };
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   if (!isMarketHours()) {
     return NextResponse.json({ skipped: true, reason: "market closed" });
   }
@@ -58,10 +58,13 @@ export async function POST() {
   try {
     await connectDB();
 
+    const origin = request.nextUrl.origin;
+    const fetcher = <T>(path: string) => fetch(`${origin}${path}`).then<T>((r) => { if (!r.ok) throw new Error(`NSE ${r.status}`); return r.json(); });
+
     const [futuresRes, spurtsRes, underlyingRes] = await Promise.all([
-      fetchFuturesSnapshot(),
-      fetchOISpurts(),
-      fetchMostActiveUnderlying(),
+      fetcher<SnapshotDerivativesResponse>("/api/nse/snapshot-derivatives-equity?index=futures"),
+      fetcher<OISpurtsData>("/api/nse/live-analysis-oi-spurts-underlyings"),
+      fetcher<{ data: MostActiveUnderlyingEntry[] }>("/api/nse/live-analysis-most-active-underlying"),
     ]);
 
     const stocks = consolidateFutures(extractSnapshotEntries(futuresRes));

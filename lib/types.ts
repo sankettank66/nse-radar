@@ -117,6 +117,29 @@ export interface OptionsActivity {
   putContracts: number;
 }
 
+export interface MostActiveUnderlyingEntry {
+  symbol: string;
+  futVolume: number;
+  optVolume: number;
+  totVolume: number;
+  futTurnover: number;
+  optTurnover: number;
+  totTurnover: number;
+  preTurnover: number;
+  latestOI: number;
+  underlying: number;
+}
+
+export interface ScannerEntry {
+  symbol: string;
+  lastPrice: number;
+  pChange: number;
+  volume: number;
+  turnover: number;
+  openInterest: number;
+  underlyingValue: number;
+}
+
 export interface SignalEntry {
   symbol: string;
   direction: "bullish" | "bearish";

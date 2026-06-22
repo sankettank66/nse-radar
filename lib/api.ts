@@ -5,6 +5,7 @@ import type {
   OiContractsResponse,
   SnapshotDerivativeEntry,
   SnapshotDerivativesResponse,
+  MostActiveUnderlyingEntry,
 } from "@/lib/types";
 
 const BASE_URL = "/api/nse";
@@ -39,6 +40,16 @@ export function fetchOiContracts(): Promise<OiContractsResponse> {
   return fetchNse<OiContractsResponse>(
     `${BASE_URL}/live-analysis-oi-spurts-contracts`
   );
+}
+
+export function fetchMostActiveUnderlying(): Promise<{ data: MostActiveUnderlyingEntry[] }> {
+  return fetchNse<{ data: MostActiveUnderlyingEntry[] }>(
+    `${BASE_URL}/live-analysis-most-active-underlying`,
+  );
+}
+
+export function fetchFuturesSnapshot(): Promise<SnapshotDerivativesResponse> {
+  return fetchSnapshotDerivatives("futures");
 }
 
 export function fetchSnapshotDerivatives(index: string): Promise<SnapshotDerivativesResponse> {

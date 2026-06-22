@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Raleway, JetBrains_Mono, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const ralewaySans = Raleway({
   variable: "--font-sans",
@@ -51,7 +52,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans"><ThemeProvider>{children}</ThemeProvider></body>
     </html>
   );
 }

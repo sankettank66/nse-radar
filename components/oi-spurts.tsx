@@ -86,8 +86,8 @@ export function OISpurts({ data }: OISpurtsProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedData.map((entry) => (
-                <TableRow key={entry.symbol} className="border-t border-border hover:bg-muted/50">
+              {sortedData.map((entry, i) => (
+                <TableRow key={i} className="border-t border-border hover:bg-muted/50">
                   <TableCell className="font-medium text-sm">
                     {entry.symbol}
                   </TableCell>

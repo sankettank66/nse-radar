@@ -15,6 +15,9 @@ const SECTION_LINKS = [
 const PAGE_LINKS = [
   { href: "/oi-contracts", label: "OI Contracts" },
   { href: "/signals", label: "Signals" },
+  { href: "/momentum", label: "Momentum" },
+  { href: "/scanner/history", label: "History" },
+  { href: "/scanner/leaderboard", label: "Leaderboard" },
 ];
 
 export function SiteNav() {
@@ -35,6 +38,9 @@ export function SiteNav() {
   function isPageActive(href: string): boolean {
     if (href === "/oi-contracts") return pathname === "/oi-contracts";
     if (href === "/signals") return pathname === "/signals";
+    if (href === "/momentum") return pathname === "/momentum";
+    if (href === "/scanner/history") return pathname === "/scanner/history";
+    if (href === "/scanner/leaderboard") return pathname === "/scanner/leaderboard";
     return false;
   }
 

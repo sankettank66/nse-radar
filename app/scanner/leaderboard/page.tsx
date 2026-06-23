@@ -89,6 +89,8 @@ export default function ScannerLeaderboardPage() {
   const [data, setData] = useState<LeaderboardResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [snapshotsLoading, setSnapshotsLoading] = useState(false);
+  const [sortColumn, setSortColumn] = useState<string | null>("rankChange");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   const fetchSnapshots = useCallback(async (d: string) => {
     setSnapshotsLoading(true);
@@ -132,6 +134,30 @@ export default function ScannerLeaderboardPage() {
   useEffect(() => {
     if (currentSlot && previousSlot) fetchLeaderboard();
   }, [currentSlot, previousSlot, fetchLeaderboard]);
+
+  function handleSort(col: string) {
+    setSortDirection((prev) => (sortColumn === col ? (prev === "asc" ? "desc" : "asc") : col === "rankChange" ? "desc" : "asc"));
+    setSortColumn(col);
+  }
+
+  function sortData(items: RankChange[]): RankChange[] {
+    if (!sortColumn) return items;
+    const sorted = [...items];
+    sorted.sort((a, b) => {
+      const getVal = (x: RankChange): number => {
+        switch (sortColumn) {
+          case "prevRank": return x.prevRank ?? 9999;
+          case "currentRank": return x.currentRank;
+          case "rankChange": return x.rankChange ?? 0;
+          case "qualityScore": return x.qualityScore;
+          case "rFactor": return x.rFactor;
+          default: return 0;
+        }
+      };
+      return sortDirection === "asc" ? getVal(a) - getVal(b) : getVal(b) - getVal(a);
+    });
+    return sorted;
+  }
 
   return (
     <div className="flex flex-col flex-1">
@@ -220,16 +246,29 @@ export default function ScannerLeaderboardPage() {
                     <thead>
                       <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                         <th className="text-left py-2 pr-2">Symbol</th>
-                        <th className="text-right py-2 pr-2">Prev Rank</th>
-                        <th className="text-right py-2 pr-2">Cur Rank</th>
-                        <th className="text-right py-2 pr-2">Change</th>
-                        <th className="text-right py-2 pr-2">Score</th>
-                        <th className="text-right py-2 pr-2">R</th>
+                        {[
+                          { key: "prevRank", label: "Prev Rank" },
+                          { key: "currentRank", label: "Cur Rank" },
+                          { key: "rankChange", label: "Change" },
+                          { key: "qualityScore", label: "Score" },
+                          { key: "rFactor", label: "R" },
+                        ].map(({ key, label }) => (
+                          <th
+                            key={key}
+                            onClick={() => handleSort(key)}
+                            className="text-right py-2 pr-2 cursor-pointer select-none hover:text-foreground transition-colors"
+                          >
+                            {label}
+                            {sortColumn === key && (
+                              <span className="ml-1">{sortDirection === "asc" ? "▲" : "▼"}</span>
+                            )}
+                          </th>
+                        ))}
                         <th className="text-right py-2 pr-2 hidden sm:table-cell">Quad</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {data.changes.map((c) => (
+                      {sortData(data.changes).map((c) => (
                         <tr key={c.symbol} className="border-t border-border hover:bg-muted/50">
                           <td className="py-2 pr-2 font-medium">
                             {c.isNew && (

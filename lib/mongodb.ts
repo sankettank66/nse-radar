@@ -61,10 +61,11 @@ export async function connectDB() {
 }
 
 export function formatTimeSlot(date: Date): string {
-  const h = date.getUTCHours() + 5;
-  const m = date.getUTCMinutes();
-  const hh = h > 23 ? h - 24 : h;
-  return `${String(hh).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const ist = new Date(date.getTime() + istOffset);
+  const h = ist.getUTCHours();
+  const m = ist.getUTCMinutes();
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
 export function formatDate(date: Date): string {
